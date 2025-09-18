@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BabyFeed Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  <!-- Supabase UMD bundle (served from CDN). Replace keys below in the script. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }
+    .circular-progress { position: relative; width: 120px; height: 120px; border-radius: 50%; background: conic-gradient(#4E87C6 var(--progress), #E0EBF5 0deg); display:flex;align-items:center;justify-content:center; }
+    .circular-progress::before{content:'';position:absolute;width:90px;height:90px;border-radius:50%;background:#E0EBF5}
+    .progress-value{position:relative;font-size:24px;font-weight:600;color:#2B66A4}
+  </style>
+</head>
+
+<body class="bg-gradient-to-br from-white to-[#B0D0E8] min-h-screen">
+  <div class="container mx-auto p-6 max-w-3xl">
+    <header class="mb-6">
+      <h1 class="text-2xl font-bold text-[#0D4C91]">BabyFeed</h1>
+      <p class="text-sm text-[#2B66A4]">Track your baby's nutrition</p>
+    </header>
+
+    <div class="bg-gradient-to-br from-[#72A1CF] to-[#4E87C6] rounded-2xl p-6 mb-6 text-white">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 class="text-2xl font-bold tracking-wide">Rafal Mousa</h2>
+          <div class="mt-2">
+            <p id="baby-age" class="text-base font-medium text-white/95">—</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="text-sm font-medium text-white/80 mb-1">Latest Weight</p>
+          <p class="text-3xl font-bold tracking-tight"><span id="current-weight">—</span> kg</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="mb-6">
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="text-lg font-semibold text-[#0D4C91]">Daily Stats</h3>
+            <select id="view-selector" class="px-3 py-1 bg-gray-100 rounded border-none outline-none cursor-pointer">
+              <option value="chart">Chart</option>
+              <option value="history">History</option>
+            </select>
+          </div>
+
+          <div class="bg-white rounded-2xl p-4 h-64 mb-4">
+            <canvas id="feedingChart"></canvas>
+            <div id="history-view" class="hidden h-full overflow-y-auto">
+              <div id="history-list" class="space-y-2"></div>
+              <div id="no-history" class="flex items-center justify-center h-full text-gray-500 hidden">
+                No feeding records for today
+              </div>
+            </div>
+          </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="bg-white rounded-2xl p-4">
+          <p class="text-sm text-gray-500 mb-3">Today's Feeds</p>
+          <div id="feed-dots" class="flex gap-2 mb-2"><div class="w-3 h-3 rounded-full bg-gray-300"></div></div>
+          <p class="text-xl font-semibold text-[#0D4C91]"><span id="feed-count-2">0</span> feeds</p>
+        </div>
+        <div class="bg-white rounded-2xl p-4">
+          <h4 class="text-lg font-semibold text-[#0D4C91] mb-3">Milk Consumption</h4>
+          <div class="flex flex-col items-center">
+            <div class="circular-progress mb-4" style="--progress:0%"><span class="progress-value">0%</span></div>
+            <p class="text-gray-500">Target: <span id="target-intake">—</span> ml</p>
+            <p class="text-lg font-semibold text-[#0D4C91]"><span id="total-volume-2">0</span> ml consumed</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mb-24">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-lg font-semibold text-[#0D4C91]">Weight Progress</h3>
+        <button id="add-weight-btn" class="px-3 py-1 bg-gray-100 rounded">Add Weight</button>
+      </div>
+      <div class="bg-white rounded-2xl p-4 h-64">
+        <canvas id="weightChart"></canvas>
+      </div>
+    </section>
+
+    <div class="fixed bottom-6 left-0 right-0 flex justify-center px-4">
+      <button id="add-feeding-btn" class="w-full max-w-md py-3 bg-[#0D4C91] text-white rounded-xl">+ Add Feeding Record</button>
+    </div>
+
+    <!-- Feeding Modal (kept minimal) -->
+    <div id="feeding-modal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-50">
+      <div class="bg-white rounded-lg p-6 max-w-md w-full transform scale-95 opacity-0">
+        <div class="flex justify-between items-center mb-4">
+          <h4 class="font-semibold text-[#0D4C91]">New Feeding</h4>
+          <button id="close-feeding-modal">✕</button>
+        </div>
+        <form id="feeding-form">
+          <label class="block mb-2">Time <input name="time" type="time" required class="w-full p-2 border rounded"/></label>
+          <label class="block mb-2">Amount (ml) <input name="amount" type="number" required class="w-full p-2 border rounded"/></label>
+          <label class="block mb-4">Duration (min) <input name="duration" type="number" required class="w-full p-2 border rounded"/></label>
+          <button type="submit" class="w-full py-2 bg-[#0D4C91] text-white rounded">Save</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Weight Modal -->
+    <div id="weight-modal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-50">
+      <div class="bg-white rounded-lg p-6 max-w-md w-full transform scale-95 opacity-0">
+        <div class="flex justify-between items-center mb-4">
+          <h4 class="font-semibold text-[#0D4C91]">Add Weight</h4>
+          <button id="close-weight-modal">✕</button>
+        </div>
+        <form id="weight-form">
+          <label class="block mb-2">Date <input name="date" type="date" required class="w-full p-2 border rounded"/></label>
+          <label class="block mb-4">Weight (kg) <input name="weight" type="number" step="0.01" required class="w-full p-2 border rounded"/></label>
+          <button type="submit" class="w-full py-2 bg-[#0D4C91] text-white rounded">Save</button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ---------- CONFIG - REPLACE WITH YOUR VALUES ----------
+    const SUPABASE_URL = 'https://zcswceithnpruwasljro.supabase.co'; // <- replace
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpjc3djZWl0aG5wcnV3YXNsanJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwMzgxOTEsImV4cCI6MjA3MjYxNDE5MX0.tJHzK0AaVDxBJU3JDEbAu_eYeZ9ShWvOjby6OtOHwz4'; // <- replace (use anon/public key, never use service_role on client)
+    // -----------------------------------------------------
+
+    // State
+    let supabaseClient = null;
+    let records = [];
+    let weightRecords = [];
+    let feedingChart = null;
+    let weightChart = null;
+
+    // Helpers
+    function safeText(id, value) { const el = document.getElementById(id); if (el) el.textContent = value; }
+
+    function calculateAge(birthDate) {
+      const birth = new Date(birthDate);
+      const today = new Date();
+      
+      let years = today.getFullYear() - birth.getFullYear();
+      let months = today.getMonth() - birth.getMonth();
+      let days = today.getDate() - birth.getDate();
+      
+      if (days < 0) {
+        months--;
+        const daysInPrevMonth = new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+        days += daysInPrevMonth;
+      }
+      
+      if (months < 0) {
+        years--;
+        months += 12;
+      }
+      
+      if (years > 0) {
+        return years === 1 ? '1 year old' : `${years} years old`;
+      } else if (months > 0) {
+        return months === 1 ? '1 month old' : `${months} months old`;
+      } else {
+        return days === 1 ? '1 day old' : `${days} days old`;
+      }
+    }
+
+    function initCharts() {
+      const feedingCtx = document.getElementById('feedingChart').getContext('2d');
+      feedingChart = new Chart(feedingCtx, {
+        type: 'line',
+        data: { labels: [], datasets: [{ label: 'Daily Volume (ml)', data: [], fill: true, tension: 0.4, borderWidth: 2 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins:{legend:{display:false}} }
+      });
+
+      const weightCtx = document.getElementById('weightChart').getContext('2d');
+      weightChart = new Chart(weightCtx, {
+        type: 'line',
+        data: { labels: [], datasets: [{ label: 'Weight (kg)', data: [], fill:true, tension:0.4, borderWidth:2 }] },
+        options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}} }
+      });
+    }
+
+    function lastNDates(n) {
+      const arr = [];
+      for (let i = n - 1; i >= 0; i--) {
+        const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - i); arr.push(new Date(d));
+      }
+      return arr;
+    }
+
+    function renderHistoryView() {
+  const today = new Date().toISOString().slice(0,10);
+  const todayRecords = records.filter(r => {
+    const recordDate = r.created_at ? new Date(r.created_at).toISOString().slice(0,10) : (r.date ? r.date.slice(0,10) : null);
+    return recordDate === today;
+  }).sort((a, b) => {
+    const timeA = a.created_at ? new Date(a.created_at) : new Date();
+    const timeB = b.created_at ? new Date(b.created_at) : new Date();
+    return timeB - timeA; // Most recent first
+  });
+
+  const historyList = document.getElementById('history-list');
+  const noHistory = document.getElementById('no-history');
+  
+  if (todayRecords.length === 0) {
+    historyList.innerHTML = '';
+    noHistory.classList.remove('hidden');
+  } else {
+    noHistory.classList.add('hidden');
+    historyList.innerHTML = todayRecords.map(record => {
+      const time = record.time || (record.created_at ? new Date(record.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Unknown time');
+      const amount = record.amount || 0;
+      const duration = record.duration || 0;
+      
+      return `
+        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+          <div class="flex items-center space-x-3">
+            <div class="w-3 h-3 rounded-full bg-[#4E87C6]"></div>
+            <div>
+              <p class="font-medium text-[#0D4C91]">${time}</p>
+              <p class="text-sm text-gray-500">${duration} minutes</p>
+            </div>
+          </div>
+          <div class="text-right">
+            <p class="font-semibold text-[#0D4C91]">${amount} ml</p>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+let currentView = 'chart';
+
+function updateChartsAndUI() {
+  // Always filter for today's records for the stats
+  const today = new Date().toISOString().slice(0,10);
+  const todayRecords = records.filter(r => {
+    const recordDate = r.created_at ? new Date(r.created_at).toISOString().slice(0,10) : (r.date ? r.date.slice(0,10) : null);
+    return recordDate === today;
+  });
+
+  // Calculate today's stats
+  const totalVolume = todayRecords.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+  const currentWeight = weightRecords.length ? Number(weightRecords[weightRecords.length-1].weight) : 4.4;
+  const targetIntake = Math.round(currentWeight * 150);
+  const intakePercentage = Math.min(Math.round((totalVolume / targetIntake) * 100), 100);
+
+  safeText('total-volume-2', totalVolume);
+  safeText('feed-count-2', todayRecords.length);
+  safeText('current-weight', currentWeight);
+  safeText('target-intake', targetIntake);
+
+  const circ = document.querySelector('.circular-progress');
+  if (circ) circ.style.setProperty('--progress', `${intakePercentage}%`);
+  const pv = document.querySelector('.progress-value'); if (pv) pv.textContent = `${intakePercentage}%`;
+
+  // feed dots - based on today's feeds
+  const feedDotsContainer = document.getElementById('feed-dots');
+  if (feedDotsContainer) {
+    feedDotsContainer.innerHTML = '';
+    const dotsCount = Math.min(todayRecords.length, 8);
+    for (let i = 0; i < dotsCount; i++) {
+      const dot = document.createElement('div'); dot.className = 'w-3 h-3 rounded-full bg-[#4E87C6]'; feedDotsContainer.appendChild(dot);
+    }
+    if (todayRecords.length > 8) {
+      const extra = document.createElement('span'); extra.className = 'text-xs text-gray-400 ml-1'; extra.textContent = `+${todayRecords.length - 8}`; feedDotsContainer.appendChild(extra);
+    } else if (todayRecords.length === 0) {
+      const emptyDot = document.createElement('div'); emptyDot.className = 'w-3 h-3 rounded-full bg-gray-300'; feedDotsContainer.appendChild(emptyDot);
+    }
+  }
+
+  // Handle view switching
+  const chartCanvas = document.getElementById('feedingChart');
+  const historyView = document.getElementById('history-view');
+  
+  if (currentView === 'chart') {
+    chartCanvas.style.display = 'block';
+    historyView.classList.add('hidden');
+    
+    // Update feeding chart: last 7 days
+    const days = lastNDates(7);
+    const labels = days.map(d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+    const totals = days.map(day => {
+      const dayKey = day.toISOString().slice(0,10);
+      return records.filter(r => {
+        const created = r.created_at ? new Date(r.created_at).toISOString().slice(0,10) : (r.date ? r.date.slice(0,10) : null);
+        return created === dayKey;
+      }).reduce((s, r) => s + (Number(r.amount) || 0), 0);
+    });
+
+    if (feedingChart) {
+      feedingChart.data.labels = labels; feedingChart.data.datasets[0].data = totals; feedingChart.update();
+    }
+  } else {
+    chartCanvas.style.display = 'none';
+    historyView.classList.remove('hidden');
+    renderHistoryView();
+  }
+
+  // Weight chart (always visible)
+  if (weightChart) {
+    weightChart.data.labels = weightRecords.map(r => new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+    weightChart.data.datasets[0].data = weightRecords.map(r => Number(r.weight));
+    weightChart.update();
+  }
+}
+
+    async function fetchInitialData() {
+      try {
+        const { data: feeds, error: feedsError } = await supabaseClient
+          .from('feed_records')
+          .select('*')
+          .order('created_at', { ascending: true });
+        if (feedsError) throw feedsError;
+        records = feeds || [];
+
+        const { data: weights, error: weightsError } = await supabaseClient
+          .from('weight_records')
+          .select('*')
+          .order('date', { ascending: true });
+        if (weightsError) throw weightsError;
+        weightRecords = weights || [];
+
+        updateChartsAndUI();
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        alert('Could not load data from Supabase. Check console for details and ensure your anon key / table policies are correct.');
+      }
+    }
+
+    // Hook up UI controls (minimal)
+    function setupUi() {
+
+    document.getElementById('view-selector')?.addEventListener('change', (e) => {
+          currentView = e.target.value;
+          updateChartsAndUI();
+        });
+      document.getElementById('add-feeding-btn')?.addEventListener('click', () => {
+        const modal = document.getElementById('feeding-modal'); if (!modal) return; modal.classList.remove('hidden'); setTimeout(() => { modal.querySelector('div')?.classList.remove('scale-95','opacity-0'); },10);
+      });
+      document.getElementById('close-feeding-modal')?.addEventListener('click', () => { const m = document.getElementById('feeding-modal'); if (!m) return; m.querySelector('div')?.classList.add('scale-95','opacity-0'); setTimeout(()=>m.classList.add('hidden'),300); });
+
+      document.getElementById('add-weight-btn')?.addEventListener('click', () => { const modal = document.getElementById('weight-modal'); if (!modal) return; modal.classList.remove('hidden'); setTimeout(()=>modal.querySelector('div')?.classList.remove('scale-95','opacity-0'),10); });
+      document.getElementById('close-weight-modal')?.addEventListener('click', () => { const m = document.getElementById('weight-modal'); if (!m) return; m.querySelector('div')?.classList.add('scale-95','opacity-0'); setTimeout(()=>m.classList.add('hidden'),300); });
+
+      document.getElementById('feeding-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault(); const fd = new FormData(e.target);
+        const newRec = { time: fd.get('time'), amount: Number(fd.get('amount')), duration: Number(fd.get('duration')), created_at: new Date().toISOString() };
+        const { data, error } = await supabaseClient.from('feed_records').insert([newRec]);
+        if (error) { console.error('Insert error:', error); alert('Failed to save feeding record'); } else { 
+  // Add the new record to local array if data is empty (some Supabase configs don't return inserted data)
+  if (!data || data.length === 0) {
+    records.push(newRec);
+  } else {
+    records.push(...data);
+  }
+  updateChartsAndUI(); 
+  const modal = document.getElementById('feeding-modal'); 
+  modal?.querySelector('div')?.classList.add('scale-95','opacity-0'); 
+  setTimeout(()=>modal?.classList.add('hidden'),300); 
+  e.target.reset(); 
+}
+      });
+
+      document.getElementById('weight-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault(); const fd = new FormData(e.target);
+        const newRec = { date: fd.get('date'), weight: Number(fd.get('weight')) };
+        const { data, error } = await supabaseClient.from('weight_records').insert([newRec]);
+        if (error) { console.error('Insert weight error:', error); alert('Failed to save weight'); } else { 
+  // Add the new record to local array if data is empty
+  if (!data || data.length === 0) {
+    weightRecords.push(newRec);
+  } else {
+    weightRecords.push(...data);
+  }
+  // Sort weight records by date to maintain order
+  weightRecords.sort((a, b) => new Date(a.date) - new Date(b.date));
+  updateChartsAndUI(); 
+  const modal = document.getElementById('weight-modal'); 
+  modal?.querySelector('div')?.classList.add('scale-95','opacity-0'); 
+  setTimeout(()=>modal?.classList.add('hidden'),300); 
+  e.target.reset(); 
+}
+      });
+    }
+
+    // App bootstrap
+    document.addEventListener('DOMContentLoaded', () => {
+      // init icons
+      try { feather.replace(); } catch (e) { /* ignore */ }
+
+      // create supabase client (make sure to replace constants above)
+      if (!SUPABASE_URL || SUPABASE_URL.includes('<YOUR_PROJECT>') || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes('<YOUR_ANON_KEY>')) {
+        console.warn('Supabase URL / anon key not configured. Please edit the top of this file and add your values.');
+      }
+      supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+      if (!supabaseClient) console.warn('Supabase client not available (check CDN).');
+
+      // Calculate and display baby age
+      const babyAge = calculateAge('2025-08-23');
+      safeText('baby-age', babyAge);
+
+      initCharts(); setupUi(); fetchInitialData();
+    });
+  </script>
+</body>
+</html>
