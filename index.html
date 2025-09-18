@@ -6,23 +6,171 @@
   <title>BabyFeed Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-  <!-- Supabase UMD bundle (served from CDN). Replace keys below in the script. -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }
-    .circular-progress { position: relative; width: 120px; height: 120px; border-radius: 50%; background: conic-gradient(#4E87C6 var(--progress), #E0EBF5 0deg); display:flex;align-items:center;justify-content:center; }
-    .circular-progress::before{content:'';position:absolute;width:90px;height:90px;border-radius:50%;background:#E0EBF5}
-    .progress-value{position:relative;font-size:24px;font-weight:600;color:#2B66A4}
+    :root {
+      --primary-50: #f0f7ff;
+      --primary-100: #e0f0ff;
+      --primary-500: #4E87C6;
+      --primary-700: #2B66A4;
+      --primary-900: #0D4C91;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+    }
+
+    body { 
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; 
+    }
+    
+    /* Responsive circular progress */
+    .circular-progress { 
+      position: relative; 
+      width: min(120px, 25vw); 
+      height: min(120px, 25vw); 
+      border-radius: 50%; 
+      background: conic-gradient(var(--primary-500) var(--progress), #E0EBF5 0deg); 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      transition: all 0.3s ease;
+    }
+    .circular-progress::before {
+      content: '';
+      position: absolute;
+      width: min(90px, 20vw);
+      height: min(90px, 20vw);
+      border-radius: 50%;
+      background: #E0EBF5;
+    }
+    .progress-value {
+      position: relative;
+      font-size: clamp(1rem, 4vw, 1.5rem);
+      font-weight: 600;
+      color: var(--primary-700);
+    }
+
+    /* Enhanced modal animations */
+    .modal-backdrop {
+      backdrop-filter: blur(4px);
+      animation: fadeIn 0.3s ease-out;
+    }
+    
+    .modal-content {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    /* Quick action buttons */
+    .quick-feed-btn {
+      transition: all 0.2s ease;
+      border: 2px solid var(--primary-100);
+    }
+    .quick-feed-btn:hover {
+      background: var(--primary-500);
+      color: white;
+      border-color: var(--primary-500);
+    }
+    .quick-feed-btn.active {
+      background: var(--primary-500);
+      color: white;
+      border-color: var(--primary-500);
+    }
+
+    /* Loading state */
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+      position: relative;
+    }
+    .loading::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 20px;
+      height: 20px;
+      margin: -10px 0 0 -10px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid var(--primary-500);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    /* Success message */
+    .success-message {
+      background: var(--success);
+      color: white;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      animation: slideInDown 0.3s ease-out;
+    }
+
+    /* Timeline view */
+    .timeline-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .timeline-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .feed-type-formula .timeline-dot { background: var(--primary-500); }
+    .feed-type-breast .timeline-dot { background: var(--success); }
+
+    /* Better touch targets for mobile */
+    button, .touch-target {
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+
+    /* Focus indicators */
+    button:focus, input:focus, select:focus {
+      outline: 2px solid var(--primary-500);
+      outline-offset: 2px;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideInDown {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Responsive improvements */
+    @media (max-width: 640px) {
+      .container { padding-left: 1rem; padding-right: 1rem; }
+      .grid { grid-template-columns: 1fr; }
+      .modal-content { margin: 1rem; max-width: calc(100vw - 2rem); }
+    }
   </style>
 </head>
 
 <body class="bg-gradient-to-br from-white to-[#B0D0E8] min-h-screen">
   <div class="container mx-auto p-6 max-w-3xl">
+    <div id="success-message" class="success-message hidden">
+      <span id="success-text">Record saved successfully!</span>
+    </div>
+
     <header class="mb-6">
-      <h1 class="text-2xl font-bold text-[#0D4C91]">BabyFeed</h1>
-      <p class="text-sm text-[#2B66A4]">Track your baby's nutrition</p>
+      <h1 class="text-2xl font-bold text-[#0D4C91]">BabyFeed Tracker</h1>
+      <p class="text-sm text-[#2B66A4]">Track your baby's nutrition journey</p>
     </header>
 
     <div class="bg-gradient-to-br from-[#72A1CF] to-[#4E87C6] rounded-2xl p-6 mb-6 text-white">
@@ -41,35 +189,54 @@
     </div>
 
     <section class="mb-6">
-        <div class="flex justify-between items-center mb-3">
-            <h3 class="text-lg font-semibold text-[#0D4C91]">Daily Stats</h3>
-            <select id="view-selector" class="px-3 py-1 bg-gray-100 rounded border-none outline-none cursor-pointer">
-              <option value="chart">Chart</option>
-              <option value="history">History</option>
-            </select>
-          </div>
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-lg font-semibold text-[#0D4C91]">Daily Stats</h3>
+        <select id="view-selector" class="px-3 py-1 bg-gray-100 rounded border-none outline-none cursor-pointer">
+          <option value="chart">Chart</option>
+          <option value="history">History</option>
+        </select>
+      </div>
 
-          <div class="bg-white rounded-2xl p-4 h-64 mb-4">
-            <canvas id="feedingChart"></canvas>
-            <div id="history-view" class="hidden h-full overflow-y-auto">
-              <div id="history-list" class="space-y-2"></div>
-              <div id="no-history" class="flex items-center justify-center h-full text-gray-500 hidden">
-                No feeding records for today
+      <div class="bg-white rounded-2xl p-4 h-64 mb-4">
+        <canvas id="feedingChart"></canvas>
+        <div id="history-view" class="hidden h-full overflow-y-auto">
+          <div id="history-list" class="space-y-2"></div>
+          <div id="no-history" class="flex flex-col items-center justify-center h-full text-gray-500 hidden">
+            <div class="text-4xl mb-2">🍼</div>
+            <p>No feeding records for today</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="bg-white rounded-2xl p-4">
+          <p class="text-sm text-gray-500 mb-3">Today's Feeds</p>
+          <div id="feed-dots" class="flex gap-2 mb-3 flex-wrap">
+            <div class="w-3 h-3 rounded-full bg-gray-300"></div>
+          </div>
+          <div class="flex justify-between items-center">
+            <p class="text-xl font-semibold text-[#0D4C91]"><span id="feed-count-2">0</span> feeds</p>
+            <div class="flex gap-2 text-sm">
+              <div class="flex items-center gap-1">
+                <div class="w-3 h-3 rounded-full bg-[#4E87C6]"></div>
+                <span class="text-gray-600">Formula</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <div class="w-3 h-3 rounded-full bg-[#10b981]"></div>
+                <span class="text-gray-600">Breast</span>
               </div>
             </div>
           </div>
-
-      <div class="grid grid-cols-2 gap-4">
-        <div class="bg-white rounded-2xl p-4">
-          <p class="text-sm text-gray-500 mb-3">Today's Feeds</p>
-          <div id="feed-dots" class="flex gap-2 mb-2"><div class="w-3 h-3 rounded-full bg-gray-300"></div></div>
-          <p class="text-xl font-semibold text-[#0D4C91]"><span id="feed-count-2">0</span> feeds</p>
         </div>
         <div class="bg-white rounded-2xl p-4">
           <h4 class="text-lg font-semibold text-[#0D4C91] mb-3">Milk Consumption</h4>
           <div class="flex flex-col items-center">
-            <div class="circular-progress mb-4" style="--progress:0%"><span class="progress-value">0%</span></div>
-            <p class="text-gray-500">Target: <span id="target-intake">—</span> ml</p>
+            <div class="circular-progress mb-4" style="--progress:0%" role="progressbar" 
+                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"
+                 aria-label="Daily milk intake progress">
+              <span class="progress-value">0%</span>
+            </div>
+            <p class="text-gray-500 text-center">Target: <span id="target-intake">—</span> ml</p>
             <p class="text-lg font-semibold text-[#0D4C91]"><span id="total-volume-2">0</span> ml consumed</p>
           </div>
         </div>
@@ -79,44 +246,90 @@
     <section class="mb-24">
       <div class="flex justify-between items-center mb-3">
         <h3 class="text-lg font-semibold text-[#0D4C91]">Weight Progress</h3>
-        <button id="add-weight-btn" class="px-3 py-1 bg-gray-100 rounded">Add Weight</button>
+        <button id="add-weight-btn" class="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200 transition-colors">
+          Add Weight
+        </button>
       </div>
       <div class="bg-white rounded-2xl p-4 h-64">
         <canvas id="weightChart"></canvas>
       </div>
     </section>
 
-    <div class="fixed bottom-6 left-0 right-0 flex justify-center px-4">
-      <button id="add-feeding-btn" class="w-full max-w-md py-3 bg-[#0D4C91] text-white rounded-xl">+ Add Feeding Record</button>
+    <div class="fixed bottom-6 left-0 right-0 flex justify-center px-4 z-40">
+      <button id="add-feeding-btn" class="w-full max-w-md py-3 bg-[#0D4C91] text-white rounded-xl hover:bg-[#2B66A4] transition-colors shadow-lg"
+              aria-label="Add new feeding record">
+        + Add Feeding Record
+      </button>
     </div>
 
-    <!-- Feeding Modal (kept minimal) -->
-    <div id="feeding-modal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-50">
-      <div class="bg-white rounded-lg p-6 max-w-md w-full transform scale-95 opacity-0">
+    <div id="feeding-modal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-50 modal-backdrop">
+      <div class="bg-white rounded-lg p-6 max-w-md w-full transform scale-95 opacity-0 modal-content mx-4">
         <div class="flex justify-between items-center mb-4">
-          <h4 class="font-semibold text-[#0D4C91]">New Feeding</h4>
-          <button id="close-feeding-modal">✕</button>
+          <h4 class="text-xl font-semibold text-[#0D4C91]">New Feeding</h4>
+          <button id="close-feeding-modal" class="text-gray-400 hover:text-gray-600 text-xl" aria-label="Close modal">×</button>
         </div>
+        
         <form id="feeding-form">
-          <label class="block mb-2">Time <input name="time" type="time" required class="w-full p-2 border rounded"/></label>
-          <label class="block mb-2">Amount (ml) <input name="amount" type="number" required class="w-full p-2 border rounded"/></label>
-          <label class="block mb-4">Duration (min) <input name="duration" type="number" required class="w-full p-2 border rounded"/></label>
-          <button type="submit" class="w-full py-2 bg-[#0D4C91] text-white rounded">Save</button>
+          <div class="mb-4">
+            <p class="text-sm text-gray-600 mb-2">Quick Add Amount:</p>
+            <div class="flex gap-2 flex-wrap">
+              <button type="button" class="quick-feed-btn px-3 py-2 bg-gray-50 rounded-full text-sm" data-amount="60">60ml</button>
+              <button type="button" class="quick-feed-btn px-3 py-2 bg-gray-50 rounded-full text-sm" data-amount="90">90ml</button>
+              <button type="button" class="quick-feed-btn px-3 py-2 bg-gray-50 rounded-full text-sm" data-amount="120">120ml</button>
+              <button type="button" class="quick-feed-btn px-3 py-2 bg-gray-50 rounded-full text-sm" data-amount="150">150ml</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <label class="block">
+              <span class="text-sm font-medium text-gray-700 mb-1 block">Time</span>
+              <input name="time" type="time" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400"/>
+            </label>
+            <label class="block">
+              <span class="text-sm font-medium text-gray-700 mb-1 block">Feed Type</span>
+              <select name="feedType" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400">
+                <option value="formula">🍼 Formula</option>
+                <option value="breast">🤱 Breast</option>
+              </select>
+            </label>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4 mb-6">
+            <label class="block">
+              <span class="text-sm font-medium text-gray-700 mb-1 block">Amount (ml)</span>
+              <input name="amount" type="number" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400" placeholder="90"/>
+            </label>
+            <label class="block">
+              <span class="text-sm font-medium text-gray-700 mb-1 block">Duration (min)</span>
+              <input name="duration" type="number" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400" placeholder="15"/>
+            </label>
+          </div>
+          
+          <button type="submit" class="w-full py-3 bg-[#0D4C91] text-white rounded-lg hover:bg-[#2B66A4] transition-colors font-medium">
+            Save Feeding Record
+          </button>
         </form>
       </div>
     </div>
 
-    <!-- Weight Modal -->
-    <div id="weight-modal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-50">
-      <div class="bg-white rounded-lg p-6 max-w-md w-full transform scale-95 opacity-0">
+    <div id="weight-modal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-50 modal-backdrop">
+      <div class="bg-white rounded-lg p-6 max-w-md w-full transform scale-95 opacity-0 modal-content mx-4">
         <div class="flex justify-between items-center mb-4">
-          <h4 class="font-semibold text-[#0D4C91]">Add Weight</h4>
-          <button id="close-weight-modal">✕</button>
+          <h4 class="text-xl font-semibold text-[#0D4C91]">Add Weight Record</h4>
+          <button id="close-weight-modal" class="text-gray-400 hover:text-gray-600 text-xl" aria-label="Close modal">×</button>
         </div>
         <form id="weight-form">
-          <label class="block mb-2">Date <input name="date" type="date" required class="w-full p-2 border rounded"/></label>
-          <label class="block mb-4">Weight (kg) <input name="weight" type="number" step="0.01" required class="w-full p-2 border rounded"/></label>
-          <button type="submit" class="w-full py-2 bg-[#0D4C91] text-white rounded">Save</button>
+          <label class="block mb-4">
+            <span class="text-sm font-medium text-gray-700 mb-1 block">Date</span>
+            <input name="date" type="date" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400"/>
+          </label>
+          <label class="block mb-6">
+            <span class="text-sm font-medium text-gray-700 mb-1 block">Weight (kg)</span>
+            <input name="weight" type="number" step="0.01" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400" placeholder="4.20"/>
+          </label>
+          <button type="submit" class="w-full py-3 bg-[#0D4C91] text-white rounded-lg hover:bg-[#2B66A4] transition-colors font-medium">
+            Save Weight Record
+          </button>
         </form>
       </div>
     </div>
@@ -135,9 +348,31 @@
     let weightRecords = [];
     let feedingChart = null;
     let weightChart = null;
+    let dailyStatsCache = new Map();
 
-    // Helpers
-    function safeText(id, value) { const el = document.getElementById(id); if (el) el.textContent = value; }
+    // Enhanced helpers
+    function safeText(id, value) { 
+      const el = document.getElementById(id); 
+      if (el) el.textContent = value; 
+    }
+
+    function showSuccessMessage(message) {
+      const successEl = document.getElementById('success-message');
+      const textEl = document.getElementById('success-text');
+      if (successEl && textEl) {
+        textEl.textContent = message;
+        successEl.classList.remove('hidden');
+        setTimeout(() => successEl.classList.add('hidden'), 3000);
+      }
+    }
+
+    function setLoading(element, loading = true) {
+      if (loading) {
+        element.classList.add('loading');
+      } else {
+        element.classList.remove('loading');
+      }
+    }
 
     function calculateAge(birthDate) {
       const birth = new Date(birthDate);
@@ -167,147 +402,249 @@
       }
     }
 
+    // Helper function to compare dates without time or timezone issues
+    function isSameDay(date1, date2) {
+      return date1.getFullYear() === date2.getFullYear() &&
+             date1.getMonth() === date2.getMonth() &&
+             date1.getDate() === date2.getDate();
+    }
+
+    // Optimized daily stats with caching
+    function getCachedDailyStats(date) {
+      const dateKey = date.toISOString().slice(0, 10);
+      
+      if (!dailyStatsCache.has(dateKey)) {
+        const dayRecords = records.filter(r => {
+          const recordDate = new Date(r.created_at);
+          return isSameDay(recordDate, date);
+        });
+        
+        const stats = {
+          totalVolume: dayRecords.reduce((s, r) => s + (Number(r.amount) || 0), 0),
+          feedCount: dayRecords.length,
+          avgDuration: dayRecords.length > 0 ? dayRecords.reduce((s, r) => s + (Number(r.duration) || 0), 0) / dayRecords.length : 0,
+          formulaCount: dayRecords.filter(r => r.feed_type === 'formula').length,
+          breastCount: dayRecords.filter(r => r.feed_type === 'breast').length,
+          records: dayRecords
+        };
+        
+        dailyStatsCache.set(dateKey, stats);
+      }
+      
+      return dailyStatsCache.get(dateKey);
+    }
+
     function initCharts() {
       const feedingCtx = document.getElementById('feedingChart').getContext('2d');
       feedingChart = new Chart(feedingCtx, {
         type: 'line',
-        data: { labels: [], datasets: [{ label: 'Daily Volume (ml)', data: [], fill: true, tension: 0.4, borderWidth: 2 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins:{legend:{display:false}} }
+        data: { 
+          labels: [], 
+          datasets: [
+            { 
+              label: 'Formula (ml)', 
+              data: [], 
+              fill: false, 
+              tension: 0.4, 
+              borderWidth: 3,
+              borderColor: '#4E87C6',
+              backgroundColor: '#4E87C6'
+            },
+            { 
+              label: 'Breast (ml)', 
+              data: [], 
+              fill: false, 
+              tension: 0.4, 
+              borderWidth: 3,
+              borderColor: '#10b981',
+              backgroundColor: '#10b981'
+            }
+          ] 
+        },
+        options: { 
+          responsive: true, 
+          maintainAspectRatio: false, 
+          plugins: { 
+            legend: { display: true, position: 'top' } 
+          },
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
       });
 
       const weightCtx = document.getElementById('weightChart').getContext('2d');
       weightChart = new Chart(weightCtx, {
         type: 'line',
-        data: { labels: [], datasets: [{ label: 'Weight (kg)', data: [], fill:true, tension:0.4, borderWidth:2 }] },
-        options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}} }
+        data: { 
+          labels: [], 
+          datasets: [{ 
+            label: 'Weight (kg)', 
+            data: [], 
+            fill: true, 
+            tension: 0.4, 
+            borderWidth: 3,
+            borderColor: '#4E87C6',
+            backgroundColor: 'rgba(78, 135, 198, 0.1)'
+          }] 
+        },
+        options: { 
+          responsive: true, 
+          maintainAspectRatio: false, 
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: false }
+          }
+        }
       });
     }
 
     function lastNDates(n) {
       const arr = [];
+      const today = new Date();
+      today.setHours(0,0,0,0);
       for (let i = n - 1; i >= 0; i--) {
-        const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - i); arr.push(new Date(d));
+        const d = new Date(today); 
+        d.setDate(d.getDate() - i); 
+        arr.push(new Date(d));
       }
       return arr;
     }
 
     function renderHistoryView() {
-  const today = new Date().toISOString().slice(0,10);
-  const todayRecords = records.filter(r => {
-    const recordDate = r.created_at ? new Date(r.created_at).toISOString().slice(0,10) : (r.date ? r.date.slice(0,10) : null);
-    return recordDate === today;
-  }).sort((a, b) => {
-    const timeA = a.created_at ? new Date(a.created_at) : new Date();
-    const timeB = b.created_at ? new Date(b.created_at) : new Date();
-    return timeB - timeA; // Most recent first
-  });
+      const today = new Date();
+      const todayStats = getCachedDailyStats(today);
+      const todayRecords = todayStats.records.sort((a, b) => {
+        const timeA = a.created_at ? new Date(a.created_at) : new Date();
+        const timeB = b.created_at ? new Date(b.created_at) : new Date();
+        return timeB - timeA; // Most recent first
+      });
 
-  const historyList = document.getElementById('history-list');
-  const noHistory = document.getElementById('no-history');
-  
-  if (todayRecords.length === 0) {
-    historyList.innerHTML = '';
-    noHistory.classList.remove('hidden');
-  } else {
-    noHistory.classList.add('hidden');
-    historyList.innerHTML = todayRecords.map(record => {
-      const time = record.time || (record.created_at ? new Date(record.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Unknown time');
-      const amount = record.amount || 0;
-      const duration = record.duration || 0;
+      const historyList = document.getElementById('history-list');
+      const noHistory = document.getElementById('no-history');
       
-      return `
-        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-          <div class="flex items-center space-x-3">
-            <div class="w-3 h-3 rounded-full bg-[#4E87C6]"></div>
-            <div>
-              <p class="font-medium text-[#0D4C91]">${time}</p>
-              <p class="text-sm text-gray-500">${duration} minutes</p>
+      if (todayRecords.length === 0) {
+        historyList.innerHTML = '';
+        noHistory.classList.remove('hidden');
+      } else {
+        noHistory.classList.add('hidden');
+        historyList.innerHTML = todayRecords.map(record => {
+          const time = record.time || (record.created_at ? new Date(record.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Unknown time');
+          const amount = record.amount || 0;
+          const duration = record.duration || 0;
+          const feedType = record.feed_type || 'formula';
+          const feedIcon = feedType === 'breast' ? '🤱' : '🍼';
+          
+          return `
+            <div class="timeline-item feed-type-${feedType}">
+              <div class="timeline-dot"></div>
+              <div class="flex justify-between items-center w-full">
+                <div class="flex items-center gap-3">
+                  <div>
+                    <p class="font-medium text-[#0D4C91] flex items-center gap-1">
+                      <span>${feedIcon}</span>
+                      ${time}
+                    </p>
+                    <p class="text-sm text-gray-500">${duration} minutes • ${feedType}</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <p class="font-semibold text-[#0D4C91]">${amount} ml</p>
+                </div>
+              </div>
             </div>
-          </div>
-          <div class="text-right">
-            <p class="font-semibold text-[#0D4C91]">${amount} ml</p>
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
-}
-
-let currentView = 'chart';
-
-function updateChartsAndUI() {
-  // Always filter for today's records for the stats
-  const today = new Date().toISOString().slice(0,10);
-  const todayRecords = records.filter(r => {
-    const recordDate = r.created_at ? new Date(r.created_at).toISOString().slice(0,10) : (r.date ? r.date.slice(0,10) : null);
-    return recordDate === today;
-  });
-
-  // Calculate today's stats
-  const totalVolume = todayRecords.reduce((s, r) => s + (Number(r.amount) || 0), 0);
-  const currentWeight = weightRecords.length ? Number(weightRecords[weightRecords.length-1].weight) : 4.4;
-  const targetIntake = Math.round(currentWeight * 150);
-  const intakePercentage = Math.min(Math.round((totalVolume / targetIntake) * 100), 100);
-
-  safeText('total-volume-2', totalVolume);
-  safeText('feed-count-2', todayRecords.length);
-  safeText('current-weight', currentWeight);
-  safeText('target-intake', targetIntake);
-
-  const circ = document.querySelector('.circular-progress');
-  if (circ) circ.style.setProperty('--progress', `${intakePercentage}%`);
-  const pv = document.querySelector('.progress-value'); if (pv) pv.textContent = `${intakePercentage}%`;
-
-  // feed dots - based on today's feeds
-  const feedDotsContainer = document.getElementById('feed-dots');
-  if (feedDotsContainer) {
-    feedDotsContainer.innerHTML = '';
-    const dotsCount = Math.min(todayRecords.length, 8);
-    for (let i = 0; i < dotsCount; i++) {
-      const dot = document.createElement('div'); dot.className = 'w-3 h-3 rounded-full bg-[#4E87C6]'; feedDotsContainer.appendChild(dot);
+          `;
+        }).join('');
+      }
     }
-    if (todayRecords.length > 8) {
-      const extra = document.createElement('span'); extra.className = 'text-xs text-gray-400 ml-1'; extra.textContent = `+${todayRecords.length - 8}`; feedDotsContainer.appendChild(extra);
-    } else if (todayRecords.length === 0) {
-      const emptyDot = document.createElement('div'); emptyDot.className = 'w-3 h-3 rounded-full bg-gray-300'; feedDotsContainer.appendChild(emptyDot);
+
+    let currentView = 'chart';
+
+    function updateChartsAndUI() {
+      // Clear cache to ensure fresh calculations
+      dailyStatsCache.clear();
+      
+      const today = new Date();
+      const todayStats = getCachedDailyStats(today);
+      const currentWeight = weightRecords.length ? Number(weightRecords[weightRecords.length-1].weight) : 4.4;
+      const targetIntake = Math.round(currentWeight * 150);
+      const intakePercentage = Math.min(Math.round((todayStats.totalVolume / targetIntake) * 100), 100);
+
+      safeText('total-volume-2', todayStats.totalVolume);
+      safeText('feed-count-2', todayStats.feedCount);
+      safeText('current-weight', currentWeight);
+      safeText('target-intake', targetIntake);
+
+      const circ = document.querySelector('.circular-progress');
+      const progressBar = circ?.querySelector('[role="progressbar"]');
+      if (circ) {
+        circ.style.setProperty('--progress', `${intakePercentage}%`);
+        if (progressBar) {
+          progressBar.setAttribute('aria-valuenow', intakePercentage);
+        }
+      }
+      const pv = document.querySelector('.progress-value'); 
+      if (pv) pv.textContent = `${intakePercentage}%`;
+
+      // Enhanced feed dots with type indicators
+      const feedDotsContainer = document.getElementById('feed-dots');
+      if (feedDotsContainer) {
+        feedDotsContainer.innerHTML = '';
+        const recentRecords = todayStats.records;
+        
+        recentRecords.forEach(record => {
+          const dot = document.createElement('div');
+          const feedType = record.feed_type || 'formula';
+          dot.className = `w-3 h-3 rounded-full ${feedType === 'breast' ? 'bg-[#10b981]' : 'bg-[#4E87C6]'}`;
+          feedDotsContainer.appendChild(dot);
+        });
+        
+        if (todayStats.feedCount === 0) {
+          const emptyDot = document.createElement('div');
+          emptyDot.className = 'w-3 h-3 rounded-full bg-gray-300';
+          feedDotsContainer.appendChild(emptyDot);
+        }
+      }
+
+      // Handle view switching
+      const chartCanvas = document.getElementById('feedingChart');
+      const historyView = document.getElementById('history-view');
+      
+      if (currentView === 'chart') {
+        chartCanvas.style.display = 'block';
+        historyView.classList.add('hidden');
+        
+        // Enhanced feeding chart with separate lines for formula and breast
+        const days = lastNDates(7);
+        const labels = days.map(d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        const formulaTotals = days.map(day => {
+          const stats = getCachedDailyStats(day);
+          return stats.records.filter(r => r.feed_type === 'formula').reduce((s, r) => s + (Number(r.amount) || 0), 0);
+        });
+        const breastTotals = days.map(day => {
+          const stats = getCachedDailyStats(day);
+          return stats.records.filter(r => r.feed_type === 'breast').reduce((s, r) => s + (Number(r.amount) || 0), 0);
+        });
+
+        if (feedingChart) {
+          feedingChart.data.labels = labels;
+          feedingChart.data.datasets[0].data = formulaTotals;
+          feedingChart.data.datasets[1].data = breastTotals;
+          feedingChart.update();
+        }
+      } else {
+        chartCanvas.style.display = 'none';
+        historyView.classList.remove('hidden');
+        renderHistoryView();
+      }
+
+      // Weight chart (always visible)
+      if (weightChart) {
+        weightChart.data.labels = weightRecords.map(r => new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        weightChart.data.datasets[0].data = weightRecords.map(r => Number(r.weight));
+        weightChart.update();
+      }
     }
-  }
-
-  // Handle view switching
-  const chartCanvas = document.getElementById('feedingChart');
-  const historyView = document.getElementById('history-view');
-  
-  if (currentView === 'chart') {
-    chartCanvas.style.display = 'block';
-    historyView.classList.add('hidden');
-    
-    // Update feeding chart: last 7 days
-    const days = lastNDates(7);
-    const labels = days.map(d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-    const totals = days.map(day => {
-      const dayKey = day.toISOString().slice(0,10);
-      return records.filter(r => {
-        const created = r.created_at ? new Date(r.created_at).toISOString().slice(0,10) : (r.date ? r.date.slice(0,10) : null);
-        return created === dayKey;
-      }).reduce((s, r) => s + (Number(r.amount) || 0), 0);
-    });
-
-    if (feedingChart) {
-      feedingChart.data.labels = labels; feedingChart.data.datasets[0].data = totals; feedingChart.update();
-    }
-  } else {
-    chartCanvas.style.display = 'none';
-    historyView.classList.remove('hidden');
-    renderHistoryView();
-  }
-
-  // Weight chart (always visible)
-  if (weightChart) {
-    weightChart.data.labels = weightRecords.map(r => new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-    weightChart.data.datasets[0].data = weightRecords.map(r => Number(r.weight));
-    weightChart.update();
-  }
-}
 
     async function fetchInitialData() {
       try {
@@ -332,80 +669,241 @@ function updateChartsAndUI() {
       }
     }
 
-    // Hook up UI controls (minimal)
+    // Enhanced UI setup with improved interactions
     function setupUi() {
-
-    document.getElementById('view-selector')?.addEventListener('change', (e) => {
-          currentView = e.target.value;
-          updateChartsAndUI();
-        });
-      document.getElementById('add-feeding-btn')?.addEventListener('click', () => {
-        const modal = document.getElementById('feeding-modal'); if (!modal) return; modal.classList.remove('hidden'); setTimeout(() => { modal.querySelector('div')?.classList.remove('scale-95','opacity-0'); },10);
+      // View selector
+      document.getElementById('view-selector')?.addEventListener('change', (e) => {
+        currentView = e.target.value;
+        updateChartsAndUI();
       });
-      document.getElementById('close-feeding-modal')?.addEventListener('click', () => { const m = document.getElementById('feeding-modal'); if (!m) return; m.querySelector('div')?.classList.add('scale-95','opacity-0'); setTimeout(()=>m.classList.add('hidden'),300); });
 
-      document.getElementById('add-weight-btn')?.addEventListener('click', () => { const modal = document.getElementById('weight-modal'); if (!modal) return; modal.classList.remove('hidden'); setTimeout(()=>modal.querySelector('div')?.classList.remove('scale-95','opacity-0'),10); });
-      document.getElementById('close-weight-modal')?.addEventListener('click', () => { const m = document.getElementById('weight-modal'); if (!m) return; m.querySelector('div')?.classList.add('scale-95','opacity-0'); setTimeout(()=>m.classList.add('hidden'),300); });
+      // Quick amount buttons
+      document.querySelectorAll('.quick-feed-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          // Remove active class from all buttons
+          document.querySelectorAll('.quick-feed-btn').forEach(b => b.classList.remove('active'));
+          // Add active class to clicked button
+          btn.classList.add('active');
+          // Set the amount in the input
+          const amountInput = document.querySelector('input[name="amount"]');
+          if (amountInput) {
+            amountInput.value = btn.dataset.amount;
+          }
+        });
+      });
 
+      // Modal controls with enhanced animations
+      document.getElementById('add-feeding-btn')?.addEventListener('click', () => {
+        const modal = document.getElementById('feeding-modal');
+        if (!modal) return;
+        
+        // Set current time as default
+        const timeInput = modal.querySelector('input[name="time"]');
+        const now = new Date();
+        if (timeInput) {
+          timeInput.value = now.toTimeString().slice(0, 5);
+        }
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        setTimeout(() => {
+          modal.querySelector('.modal-content')?.classList.remove('scale-95', 'opacity-0');
+        }, 10);
+      });
+
+      document.getElementById('close-feeding-modal')?.addEventListener('click', () => {
+        closeModal('feeding-modal');
+      });
+
+      document.getElementById('add-weight-btn')?.addEventListener('click', () => {
+        const modal = document.getElementById('weight-modal');
+        if (!modal) return;
+        
+        // Set today's date as default
+        const dateInput = modal.querySelector('input[name="date"]');
+        if (dateInput) {
+          dateInput.value = new Date().toISOString().slice(0, 10);
+        }
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        setTimeout(() => {
+          modal.querySelector('.modal-content')?.classList.remove('scale-95', 'opacity-0');
+        }, 10);
+      });
+
+      document.getElementById('close-weight-modal')?.addEventListener('click', () => {
+        closeModal('weight-modal');
+      });
+
+      // Close modals when clicking backdrop
+      document.querySelectorAll('.modal-backdrop').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            closeModal(modal.id);
+          }
+        });
+      });
+
+      // Enhanced form submissions with loading states
       document.getElementById('feeding-form')?.addEventListener('submit', async (e) => {
-        e.preventDefault(); const fd = new FormData(e.target);
-        const newRec = { time: fd.get('time'), amount: Number(fd.get('amount')), duration: Number(fd.get('duration')), created_at: new Date().toISOString() };
-        const { data, error } = await supabaseClient.from('feed_records').insert([newRec]);
-        if (error) { console.error('Insert error:', error); alert('Failed to save feeding record'); } else { 
-  // Add the new record to local array if data is empty (some Supabase configs don't return inserted data)
-  if (!data || data.length === 0) {
-    records.push(newRec);
-  } else {
-    records.push(...data);
-  }
-  updateChartsAndUI(); 
-  const modal = document.getElementById('feeding-modal'); 
-  modal?.querySelector('div')?.classList.add('scale-95','opacity-0'); 
-  setTimeout(()=>modal?.classList.add('hidden'),300); 
-  e.target.reset(); 
-}
+        e.preventDefault();
+        const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        
+        setLoading(submitBtn, true);
+        
+        try {
+          const fd = new FormData(form);
+          const newRec = {
+            time: fd.get('time'),
+            amount: Number(fd.get('amount')),
+            duration: Number(fd.get('duration')),
+            feed_type: fd.get('feedType')
+          };
+
+          const { data, error } = await supabaseClient.from('feed_records').insert([newRec]).select();
+          
+          if (error) {
+            console.error('Insert error:', error);
+            alert('Failed to save feeding record');
+          } else {
+            // Add the new record from Supabase to local array
+            records.push(...data);
+            
+            updateChartsAndUI();
+            showSuccessMessage('Feeding record saved successfully!');
+            closeModal('feeding-modal');
+            form.reset();
+            
+            // Clear quick button selection
+            document.querySelectorAll('.quick-feed-btn').forEach(b => b.classList.remove('active'));
+          }
+        } catch (err) {
+          console.error('Submission error:', err);
+          alert('Failed to save feeding record');
+        } finally {
+          setLoading(submitBtn, false);
+        }
       });
 
       document.getElementById('weight-form')?.addEventListener('submit', async (e) => {
-        e.preventDefault(); const fd = new FormData(e.target);
-        const newRec = { date: fd.get('date'), weight: Number(fd.get('weight')) };
-        const { data, error } = await supabaseClient.from('weight_records').insert([newRec]);
-        if (error) { console.error('Insert weight error:', error); alert('Failed to save weight'); } else { 
-  // Add the new record to local array if data is empty
-  if (!data || data.length === 0) {
-    weightRecords.push(newRec);
-  } else {
-    weightRecords.push(...data);
-  }
-  // Sort weight records by date to maintain order
-  weightRecords.sort((a, b) => new Date(a.date) - new Date(b.date));
-  updateChartsAndUI(); 
-  const modal = document.getElementById('weight-modal'); 
-  modal?.querySelector('div')?.classList.add('scale-95','opacity-0'); 
-  setTimeout(()=>modal?.classList.add('hidden'),300); 
-  e.target.reset(); 
-}
+        e.preventDefault();
+        const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        
+        setLoading(submitBtn, true);
+        
+        try {
+          const fd = new FormData(form);
+          const newRec = {
+            date: fd.get('date'),
+            weight: Number(fd.get('weight'))
+          };
+
+          const { data, error } = await supabaseClient.from('weight_records').insert([newRec]);
+          
+          if (error) {
+            console.error('Insert weight error:', error);
+            alert('Failed to save weight record');
+          } else {
+            // Add the new record to local array
+            if (!data || data.length === 0) {
+              weightRecords.push(newRec);
+            } else {
+              weightRecords.push(...data);
+            }
+            
+            // Sort weight records by date
+            weightRecords.sort((a, b) => new Date(a.date) - new Date(b.date));
+            updateChartsAndUI();
+            showSuccessMessage('Weight record saved successfully!');
+            closeModal('weight-modal');
+            form.reset();
+          }
+        } catch (err) {
+          console.error('Submission error:', err);
+          alert('Failed to save weight record');
+        } finally {
+          setLoading(submitBtn, false);
+        }
+      });
+
+      // Keyboard navigation improvements
+      document.addEventListener('keydown', (e) => {
+        // Close modals with Escape key
+        if (e.key === 'Escape') {
+          const openModal = document.querySelector('.modal-backdrop:not(.hidden)');
+          if (openModal) {
+            closeModal(openModal.id);
+          }
+        }
       });
     }
 
-    // App bootstrap
-    document.addEventListener('DOMContentLoaded', () => {
-      // init icons
-      try { feather.replace(); } catch (e) { /* ignore */ }
-
-      // create supabase client (make sure to replace constants above)
-      if (!SUPABASE_URL || SUPABASE_URL.includes('<YOUR_PROJECT>') || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes('<YOUR_ANON_KEY>')) {
-        console.warn('Supabase URL / anon key not configured. Please edit the top of this file and add your values.');
+    function closeModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (!modal) return;
+      
+      const content = modal.querySelector('.modal-content');
+      if (content) {
+        content.classList.add('scale-95', 'opacity-0');
       }
-      supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-      if (!supabaseClient) console.warn('Supabase client not available (check CDN).');
+      
+      setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }, 300);
+    }
 
-      // Calculate and display baby age
-      const babyAge = calculateAge('2025-08-23');
-      safeText('baby-age', babyAge);
+    // App bootstrap with error handling
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        // Initialize icons
+        if (window.feather) {
+          feather.replace();
+        }
 
-      initCharts(); setupUi(); fetchInitialData();
+        // Create supabase client
+        if (!SUPABASE_URL || SUPABASE_URL.includes('<YOUR_PROJECT>') || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes('<YOUR_ANON_KEY>')) {
+          console.warn('Supabase URL / anon key not configured. Please edit the top of this file and add your values.');
+        }
+        
+        supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+        if (!supabaseClient) {
+          console.warn('Supabase client not available (check CDN).');
+        }
+
+        // Calculate and display baby age
+        const babyAge = calculateAge('2025-08-23');
+        safeText('baby-age', babyAge);
+
+        // Initialize everything
+        initCharts();
+        setupUi();
+        
+        if (supabaseClient) {
+          await fetchInitialData();
+        } else {
+          // Show demo data if Supabase isn't available
+          updateChartsAndUI();
+        }
+        
+      } catch (error) {
+        console.error('Initialization error:', error);
+        alert('Failed to initialize the app. Please check the console for details.');
+      }
     });
+
+    // Service worker registration for offline support (optional enhancement)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {
+          // Service worker registration failed, continue without it
+        });
+      });
+    }
   </script>
 </body>
 </html>
