@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BabyFeed Tracker</title>
+  <title>Rafal Mousa Diary</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
@@ -79,6 +79,23 @@
       color: white;
       border-color: var(--primary-500);
     }
+    
+    /* Toggle header buttons */
+    .toggle-btn.active {
+      background: white;
+      box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+      color: var(--primary-900);
+    }
+    
+    .toggle-btn:not(.active) {
+      background: transparent;
+      box-shadow: none;
+      color: #6b7280; /* gray-600 */
+    }
+    .toggle-btn:not(.active):hover {
+      color: var(--primary-900);
+    }
+
 
     /* Loading state */
     .loading {
@@ -126,6 +143,24 @@
     }
     .feed-type-formula .timeline-dot { background: var(--primary-500); }
     .feed-type-breast .timeline-dot { background: var(--success); }
+    
+    .timeline-actions {
+      display: flex;
+      gap: 8px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    .timeline-item:hover .timeline-actions {
+      opacity: 1;
+    }
+    .action-btn {
+      color: #6b7280;
+      transition: color 0.2s;
+    }
+    .action-btn:hover {
+      color: var(--primary-700);
+    }
+
 
     /* Better touch targets for mobile */
     button, .touch-target {
@@ -137,6 +172,22 @@
     button:focus, input:focus, select:focus {
       outline: 2px solid var(--primary-500);
       outline-offset: 2px;
+    }
+    
+    #date-selector {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
+        background-color: #f3f4f6;
+        border-radius: 0.5rem;
+        border: none;
+        outline: none;
+        cursor: pointer;
+    }
+
+    #date-selector::-webkit-calendar-picker-indicator {
+        filter: invert(0.5);
     }
 
     /* Animations */
@@ -158,6 +209,7 @@
       .container { padding-left: 1rem; padding-right: 1rem; }
       .grid { grid-template-columns: 1fr; }
       .modal-content { margin: 1rem; max-width: calc(100vw - 2rem); }
+      .timeline-actions { opacity: 1; } /* Always show on mobile for better accessibility */
     }
   </style>
 </head>
@@ -169,8 +221,8 @@
     </div>
 
     <header class="mb-6">
-      <h1 class="text-2xl font-bold text-[#0D4C91]">BabyFeed Tracker</h1>
-      <p class="text-sm text-[#2B66A4]">Track your baby's nutrition journey</p>
+      <h1 class="text-2xl font-bold text-[#0D4C91]">Rafal Mousa's Diary</h1>
+      <p class="text-sm text-[#2B66A4]">Anak Papa & Mama nutrition journey</p>
     </header>
 
     <div class="bg-gradient-to-br from-[#72A1CF] to-[#4E87C6] rounded-2xl p-6 mb-6 text-white">
@@ -187,28 +239,13 @@
         </div>
       </div>
     </div>
-
+    
     <section class="mb-6">
-      <div class="flex justify-between items-center mb-3">
-        <h3 class="text-lg font-semibold text-[#0D4C91]">Daily Stats</h3>
-        <select id="view-selector" class="px-3 py-1 bg-gray-100 rounded border-none outline-none cursor-pointer">
-          <option value="chart">Chart</option>
-          <option value="history">History</option>
-        </select>
-      </div>
-
-      <div class="bg-white rounded-2xl p-4 h-64 mb-4">
-        <canvas id="feedingChart"></canvas>
-        <div id="history-view" class="hidden h-full overflow-y-auto">
-          <div id="history-list" class="space-y-2"></div>
-          <div id="no-history" class="flex flex-col items-center justify-center h-full text-gray-500 hidden">
-            <div class="text-4xl mb-2">🍼</div>
-            <p>No feeding records for today</p>
-          </div>
-        </div>
-      </div>
-
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="bg-white rounded-2xl p-4">
+          <p class="text-sm text-gray-500 mb-3">Time since last feed</p>
+          <p id="last-feed-time" class="text-xl font-semibold text-[#0D4C91]">Loading...</p>
+        </div>
         <div class="bg-white rounded-2xl p-4">
           <p class="text-sm text-gray-500 mb-3">Today's Feeds</p>
           <div id="feed-dots" class="flex gap-2 mb-3 flex-wrap">
@@ -243,6 +280,33 @@
       </div>
     </section>
 
+    <section class="mb-6">
+      <h3 class="text-lg font-semibold text-[#0D4C91]">Milk Intake Progress</h3>
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2 bg-gray-100 rounded-xl p-1">
+          <button id="toggle-chart" class="toggle-btn px-3 py-1 text-sm rounded-lg flex items-center gap-1 active">
+            📊
+          </button>
+          <button id="toggle-history" class="toggle-btn px-3 py-1 text-sm rounded-lg flex items-center gap-1">
+            📜
+          </button>
+        </div>
+        <input type="date" id="date-selector" class="px-3 py-1 bg-gray-100 rounded-lg">
+      </div>
+      <div class="bg-white rounded-2xl p-4 mb-4">
+        <div id="daily-view" class="h-64 overflow-y-auto mb-4 hidden">
+          <div id="daily-list" class="space-y-2"></div>
+          <div id="no-daily-records" class="flex flex-col items-center justify-center h-full text-gray-500 hidden">
+            <div class="text-4xl mb-2">🍼</div>
+            <p>No feeding records for this day</p>
+          </div>
+        </div>
+        <div id="feeding-chart-container" class="h-64">
+          <canvas id="feedingChart"></canvas>
+        </div>
+      </div>
+    </section>
+
     <section class="mb-24">
       <div class="flex justify-between items-center mb-3">
         <h3 class="text-lg font-semibold text-[#0D4C91]">Weight Progress</h3>
@@ -265,11 +329,13 @@
     <div id="feeding-modal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-50 modal-backdrop">
       <div class="bg-white rounded-lg p-6 max-w-md w-full transform scale-95 opacity-0 modal-content mx-4">
         <div class="flex justify-between items-center mb-4">
-          <h4 class="text-xl font-semibold text-[#0D4C91]">New Feeding</h4>
+          <h4 id="feeding-modal-title" class="text-xl font-semibold text-[#0D4C91]">New Feeding</h4>
           <button id="close-feeding-modal" class="text-gray-400 hover:text-gray-600 text-xl" aria-label="Close modal">×</button>
         </div>
         
         <form id="feeding-form">
+          <input type="hidden" name="id" id="feeding-record-id">
+          
           <div class="mb-4">
             <p class="text-sm text-gray-600 mb-2">Quick Add Amount:</p>
             <div class="flex gap-2 flex-wrap">
@@ -349,6 +415,8 @@
     let feedingChart = null;
     let weightChart = null;
     let dailyStatsCache = new Map();
+    let currentDate = new Date();
+    let counterIntervalId = null;
 
     // Enhanced helpers
     function safeText(id, value) { 
@@ -401,6 +469,40 @@
         return days === 1 ? '1 day old' : `${days} days old`;
       }
     }
+    
+    // Updated function to update the "last feed" counter
+    function updateLastFeedCounter() {
+      const lastFeedEl = document.getElementById('last-feed-time');
+      if (!lastFeedEl) return;
+      
+      // We sort by the created_at timestamp to find the absolute most recent record
+      const sortedRecords = [...records].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      
+      if (sortedRecords.length === 0) {
+        lastFeedEl.textContent = 'No records yet';
+        return;
+      }
+      
+      const lastFeedTime = new Date(sortedRecords[0].created_at);
+      const now = new Date();
+      const diffInMinutes = Math.floor((now - lastFeedTime) / (1000 * 60));
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      const remainingMinutes = diffInMinutes % 60;
+      
+      let timeString = '';
+      if (diffInMinutes < 1) {
+        timeString = 'Just now';
+      } else if (diffInMinutes < 60) {
+        timeString = `${diffInMinutes}m ago`;
+      } else if (diffInHours > 24) {
+        const diffInDays = Math.floor(diffInHours / 24);
+        timeString = `${diffInDays}d ago`;
+      } else {
+        timeString = `${diffInHours}h ${remainingMinutes}m ago`;
+      }
+      
+      lastFeedEl.textContent = timeString;
+    }
 
     // Helper function to compare dates without time or timezone issues
     function isSameDay(date1, date2) {
@@ -435,100 +537,105 @@
     }
 
     function initCharts() {
-      const feedingCtx = document.getElementById('feedingChart').getContext('2d');
-      feedingChart = new Chart(feedingCtx, {
-        type: 'line',
-        data: { 
-          labels: [], 
-          datasets: [
-            { 
-              label: 'Formula (ml)', 
+      const feedingCtx = document.getElementById('feedingChart');
+      if (feedingCtx) {
+        feedingChart = new Chart(feedingCtx.getContext('2d'), {
+          type: 'line',
+          data: { 
+            labels: [], 
+            datasets: [
+              { 
+                label: 'Formula (ml)', 
+                data: [], 
+                fill: false, 
+                tension: 0.4, 
+                borderWidth: 3,
+                borderColor: '#4E87C6',
+                backgroundColor: '#4E87C6'
+              },
+              { 
+                label: 'Breast (ml)', 
+                data: [], 
+                fill: false, 
+                tension: 0.4, 
+                borderWidth: 3,
+                borderColor: '#10b981',
+                backgroundColor: '#10b981'
+              }
+            ] 
+          },
+          options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { 
+              legend: { display: true, position: 'top' } 
+            },
+            scales: {
+              y: { beginAtZero: true }
+            }
+          }
+        });
+      }
+
+      const weightCtx = document.getElementById('weightChart');
+      if (weightCtx) {
+        weightChart = new Chart(weightCtx.getContext('2d'), {
+          type: 'line',
+          data: { 
+            labels: [], 
+            datasets: [{ 
+              label: 'Weight (kg)', 
               data: [], 
-              fill: false, 
+              fill: true, 
               tension: 0.4, 
               borderWidth: 3,
               borderColor: '#4E87C6',
-              backgroundColor: '#4E87C6'
-            },
-            { 
-              label: 'Breast (ml)', 
-              data: [], 
-              fill: false, 
-              tension: 0.4, 
-              borderWidth: 3,
-              borderColor: '#10b981',
-              backgroundColor: '#10b981'
-            }
-          ] 
-        },
-        options: { 
-          responsive: true, 
-          maintainAspectRatio: false, 
-          plugins: { 
-            legend: { display: true, position: 'top' } 
+              backgroundColor: 'rgba(78, 135, 198, 0.1)'
+            }] 
           },
-          scales: {
-            y: { beginAtZero: true }
+          options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { beginAtZero: false }
+            }
           }
-        }
-      });
-
-      const weightCtx = document.getElementById('weightChart').getContext('2d');
-      weightChart = new Chart(weightCtx, {
-        type: 'line',
-        data: { 
-          labels: [], 
-          datasets: [{ 
-            label: 'Weight (kg)', 
-            data: [], 
-            fill: true, 
-            tension: 0.4, 
-            borderWidth: 3,
-            borderColor: '#4E87C6',
-            backgroundColor: 'rgba(78, 135, 198, 0.1)'
-          }] 
-        },
-        options: { 
-          responsive: true, 
-          maintainAspectRatio: false, 
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { beginAtZero: false }
-          }
-        }
-      });
-    }
-
-    function lastNDates(n) {
-      const arr = [];
-      const today = new Date();
-      today.setHours(0,0,0,0);
-      for (let i = n - 1; i >= 0; i--) {
-        const d = new Date(today); 
-        d.setDate(d.getDate() - i); 
-        arr.push(new Date(d));
+        });
       }
-      return arr;
     }
 
-    function renderHistoryView() {
-      const today = new Date();
-      const todayStats = getCachedDailyStats(today);
-      const todayRecords = todayStats.records.sort((a, b) => {
-        const timeA = a.created_at ? new Date(a.created_at) : new Date();
-        const timeB = b.created_at ? new Date(b.created_at) : new Date();
-        return timeB - timeA; // Most recent first
+    function lastNDates(n, endDate) {
+        const arr = [];
+        const end = new Date(endDate);
+        end.setHours(0,0,0,0);
+        for (let i = n - 1; i >= 0; i--) {
+            const d = new Date(end); 
+            d.setDate(d.getDate() - i); 
+            arr.push(new Date(d));
+        }
+        return arr;
+    }
+
+    // Updated updateDailyView to sort by feed time and add edit/delete buttons
+    function updateDailyView() {
+      const dailyStats = getCachedDailyStats(currentDate);
+      const dailyRecords = dailyStats.records.sort((a, b) => {
+        // Create a comparable time string for sorting, including the date
+        const timeA = new Date(`${a.created_at.split('T')[0]}T${a.time}:00`);
+        const timeB = new Date(`${b.created_at.split('T')[0]}T${b.time}:00`);
+        return timeB - timeA;
       });
 
-      const historyList = document.getElementById('history-list');
-      const noHistory = document.getElementById('no-history');
-      
-      if (todayRecords.length === 0) {
-        historyList.innerHTML = '';
-        noHistory.classList.remove('hidden');
+      const dailyList = document.getElementById('daily-list');
+      const noDailyRecords = document.getElementById('no-daily-records');
+
+      if (dailyRecords.length === 0) {
+        dailyList.innerHTML = '';
+        noDailyRecords.classList.remove('hidden');
       } else {
-        noHistory.classList.add('hidden');
-        historyList.innerHTML = todayRecords.map(record => {
+        noDailyRecords.classList.add('hidden');
+        dailyList.innerHTML = dailyRecords.map(record => {
           const time = record.time || (record.created_at ? new Date(record.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Unknown time');
           const amount = record.amount || 0;
           const duration = record.duration || 0;
@@ -548,8 +655,16 @@
                     <p class="text-sm text-gray-500">${duration} minutes • ${feedType}</p>
                   </div>
                 </div>
-                <div class="text-right">
+                <div class="text-right flex items-center gap-3">
                   <p class="font-semibold text-[#0D4C91]">${amount} ml</p>
+                  <div class="timeline-actions">
+                    <button class="action-btn" onclick="editFeedingRecord('${record.id}')" aria-label="Edit record">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </button>
+                    <button class="action-btn" onclick="deleteFeedingRecord('${record.id}')" aria-label="Delete record">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash-2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -558,9 +673,85 @@
       }
     }
 
-    let currentView = 'chart';
+    // New functions for editing and deleting
+    function editFeedingRecord(id) {
+      const record = records.find(r => r.id === id);
+      if (!record) return;
+      
+      const modal = document.getElementById('feeding-modal');
+      const form = document.getElementById('feeding-form');
+      
+      // Update form fields
+      document.getElementById('feeding-modal-title').textContent = 'Edit Feeding';
+      form.querySelector('#feeding-record-id').value = record.id;
+      form.querySelector('input[name="time"]').value = record.time;
+      form.querySelector('select[name="feedType"]').value = record.feed_type;
+      form.querySelector('input[name="amount"]').value = record.amount;
+      form.querySelector('input[name="duration"]').value = record.duration;
 
-    function updateChartsAndUI() {
+      // Highlight the correct quick button if applicable
+      document.querySelectorAll('.quick-feed-btn').forEach(b => {
+          b.classList.remove('active');
+          if (b.dataset.amount == record.amount) {
+              b.classList.add('active');
+          }
+      });
+      
+      // Show modal
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      setTimeout(() => {
+        modal.querySelector('.modal-content')?.classList.remove('scale-95', 'opacity-0');
+      }, 10);
+    }
+    
+    async function deleteFeedingRecord(id) {
+        if (!confirm('Are you sure you want to delete this record?')) return;
+        
+        try {
+            const { error } = await supabaseClient.from('feed_records').delete().eq('id', id);
+            
+            if (error) {
+                console.error('Delete error:', error);
+                alert('Failed to delete feeding record');
+            } else {
+                // Remove the record from the local state
+                records = records.filter(r => r.id !== id);
+                dailyStatsCache.clear(); // Clear cache to re-calculate stats
+                
+                updateDailyView();
+                updateFeedingChartForSelectedDate();
+                updateTodayStatsAndWeightChart();
+                updateLastFeedCounter();
+                showSuccessMessage('Feeding record deleted!');
+            }
+        } catch (err) {
+            console.error('Deletion error:', err);
+            alert('Failed to delete feeding record');
+        }
+    }
+
+    function updateFeedingChartForSelectedDate() {
+      const days = lastNDates(7, currentDate);
+      const labels = days.map(d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+      const formulaTotals = days.map(day => {
+        const stats = getCachedDailyStats(day);
+        return stats.records.filter(r => r.feed_type === 'formula').reduce((s, r) => s + (Number(r.amount) || 0), 0);
+      });
+      const breastTotals = days.map(day => {
+        const stats = getCachedDailyStats(day);
+        return stats.records.filter(r => r.feed_type === 'breast').reduce((s, r) => s + (Number(r.amount) || 0), 0);
+      });
+
+      if (feedingChart) {
+        feedingChart.data.labels = labels;
+        feedingChart.data.datasets[0].data = formulaTotals;
+        feedingChart.data.datasets[1].data = breastTotals;
+        feedingChart.update();
+      }
+    }
+
+    function updateTodayStatsAndWeightChart() {
       // Clear cache to ensure fresh calculations
       dailyStatsCache.clear();
       
@@ -606,38 +797,6 @@
         }
       }
 
-      // Handle view switching
-      const chartCanvas = document.getElementById('feedingChart');
-      const historyView = document.getElementById('history-view');
-      
-      if (currentView === 'chart') {
-        chartCanvas.style.display = 'block';
-        historyView.classList.add('hidden');
-        
-        // Enhanced feeding chart with separate lines for formula and breast
-        const days = lastNDates(7);
-        const labels = days.map(d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-        const formulaTotals = days.map(day => {
-          const stats = getCachedDailyStats(day);
-          return stats.records.filter(r => r.feed_type === 'formula').reduce((s, r) => s + (Number(r.amount) || 0), 0);
-        });
-        const breastTotals = days.map(day => {
-          const stats = getCachedDailyStats(day);
-          return stats.records.filter(r => r.feed_type === 'breast').reduce((s, r) => s + (Number(r.amount) || 0), 0);
-        });
-
-        if (feedingChart) {
-          feedingChart.data.labels = labels;
-          feedingChart.data.datasets[0].data = formulaTotals;
-          feedingChart.data.datasets[1].data = breastTotals;
-          feedingChart.update();
-        }
-      } else {
-        chartCanvas.style.display = 'none';
-        historyView.classList.remove('hidden');
-        renderHistoryView();
-      }
-
       // Weight chart (always visible)
       if (weightChart) {
         weightChart.data.labels = weightRecords.map(r => new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
@@ -662,7 +821,10 @@
         if (weightsError) throw weightsError;
         weightRecords = weights || [];
 
-        updateChartsAndUI();
+        updateDailyView();
+        updateFeedingChartForSelectedDate();
+        updateTodayStatsAndWeightChart();
+        updateLastFeedCounter();
       } catch (err) {
         console.error('Error fetching data:', err);
         alert('Could not load data from Supabase. Check console for details and ensure your anon key / table policies are correct.');
@@ -671,10 +833,34 @@
 
     // Enhanced UI setup with improved interactions
     function setupUi() {
-      // View selector
-      document.getElementById('view-selector')?.addEventListener('change', (e) => {
-        currentView = e.target.value;
-        updateChartsAndUI();
+      const dateSelector = document.getElementById('date-selector');
+      if (dateSelector) {
+          dateSelector.valueAsDate = currentDate;
+          dateSelector.addEventListener('change', (e) => {
+              currentDate = new Date(e.target.value);
+              updateDailyView();
+              updateFeedingChartForSelectedDate();
+          });
+      }
+      
+      // Toggle button functionality for History vs Chart
+      const historyBtn = document.getElementById('toggle-history');
+      const chartBtn = document.getElementById('toggle-chart');
+      const dailyView = document.getElementById('daily-view');
+      const chartContainer = document.getElementById('feeding-chart-container');
+      
+      historyBtn.addEventListener('click', () => {
+        historyBtn.classList.add('active');
+        chartBtn.classList.remove('active');
+        dailyView.classList.remove('hidden');
+        chartContainer.classList.add('hidden');
+      });
+      
+      chartBtn.addEventListener('click', () => {
+        chartBtn.classList.add('active');
+        historyBtn.classList.remove('active');
+        dailyView.classList.add('hidden');
+        chartContainer.classList.remove('hidden');
       });
 
       // Quick amount buttons
@@ -697,6 +883,13 @@
       document.getElementById('add-feeding-btn')?.addEventListener('click', () => {
         const modal = document.getElementById('feeding-modal');
         if (!modal) return;
+        
+        // Reset form and title for new record
+        const form = modal.querySelector('form');
+        form.reset();
+        document.getElementById('feeding-modal-title').textContent = 'New Feeding';
+        document.getElementById('feeding-record-id').value = '';
+        document.querySelectorAll('.quick-feed-btn').forEach(b => b.classList.remove('active'));
         
         // Set current time as default
         const timeInput = modal.querySelector('input[name="time"]');
@@ -756,6 +949,7 @@
         
         try {
           const fd = new FormData(form);
+          const recordId = fd.get('id');
           const newRec = {
             time: fd.get('time'),
             amount: Number(fd.get('amount')),
@@ -763,16 +957,35 @@
             feed_type: fd.get('feedType')
           };
 
-          const { data, error } = await supabaseClient.from('feed_records').insert([newRec]).select();
+          let data, error;
+
+          if (recordId) {
+            // Update an existing record
+            ({ data, error } = await supabaseClient.from('feed_records').update(newRec).eq('id', recordId).select());
+          } else {
+            // Insert a new record
+            ({ data, error } = await supabaseClient.from('feed_records').insert([newRec]).select());
+          }
           
           if (error) {
-            console.error('Insert error:', error);
+            console.error('Submission error:', error);
             alert('Failed to save feeding record');
           } else {
-            // Add the new record from Supabase to local array
-            records.push(...data);
+            // Update local records array
+            if (recordId) {
+                const index = records.findIndex(r => r.id === recordId);
+                if (index !== -1) {
+                    records[index] = { ...records[index], ...newRec };
+                }
+            } else {
+                records.push(...data);
+            }
             
-            updateChartsAndUI();
+            dailyStatsCache.clear(); // Clear cache to re-calculate stats
+            updateDailyView();
+            updateFeedingChartForSelectedDate();
+            updateTodayStatsAndWeightChart();
+            updateLastFeedCounter();
             showSuccessMessage('Feeding record saved successfully!');
             closeModal('feeding-modal');
             form.reset();
@@ -817,7 +1030,7 @@
             
             // Sort weight records by date
             weightRecords.sort((a, b) => new Date(a.date) - new Date(b.date));
-            updateChartsAndUI();
+            updateTodayStatsAndWeightChart();
             showSuccessMessage('Weight record saved successfully!');
             closeModal('weight-modal');
             form.reset();
@@ -887,8 +1100,13 @@
           await fetchInitialData();
         } else {
           // Show demo data if Supabase isn't available
-          updateChartsAndUI();
+          updateTodayStatsAndWeightChart();
+          updateLastFeedCounter();
         }
+        
+        // Update the counter every minute
+        if (counterIntervalId) clearInterval(counterIntervalId);
+        counterIntervalId = setInterval(updateLastFeedCounter, 60000); // 60000ms = 1 minute
         
       } catch (error) {
         console.error('Initialization error:', error);
