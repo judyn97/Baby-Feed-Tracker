@@ -482,13 +482,27 @@
         lastFeedEl.textContent = 'No records yet';
         return;
       }
-      
-      const lastFeedTime = new Date(sortedRecords[0].created_at);
+
+      const lastFeedTime = new Date(sortedRecords[0].created_at); // This is likely a full timestamp and works fine
+      const supabaseTime = sortedRecords[0].time; // This is just the time string, e.g., "14:30:00"
+
+      // Combine the current date with the time from Supabase
       const now = new Date();
-      const diffInMinutes = Math.floor((now - lastFeedTime) / (1000 * 60));
+      const [hours, minutes, seconds] = supabaseTime.split(':').map(Number);
+      const lastFeedTimeFromSupabase = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        hours,
+        minutes,
+        seconds
+      );
+
+      // Now, use the new variable for your calculations
+      const diffInMinutes = Math.floor((now - lastFeedTimeFromSupabase) / (1000 * 60));
       const diffInHours = Math.floor(diffInMinutes / 60);
       const remainingMinutes = diffInMinutes % 60;
-      
+
       let timeString = '';
       if (diffInMinutes < 1) {
         timeString = 'Just now';
