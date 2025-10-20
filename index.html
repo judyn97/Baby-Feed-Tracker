@@ -241,11 +241,24 @@
     </div>
     
     <section class="mb-6">
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="grid grid-cols-2 sm:grid-cols-2 gap-4">
         <div class="bg-white rounded-2xl p-4">
-          <p class="text-sm text-gray-500 mb-3">Time since last feed</p>
+          <p class="text-sm text-gray-500 mb-3">🍼 Last feed</p>
           <p id="last-feed-time" class="text-xl font-semibold text-[#0D4C91]">Loading...</p>
         </div>
+        <div class="bg-white rounded-2xl p-4">
+          <p class="text-sm text-gray-500 mb-3">🤱 Last pump</p>
+          <p id="last-pump-time" class="text-xl font-semibold text-[#0D4C91]">Loading...</p>
+        </div>
+        <div class="bg-white rounded-2xl p-4">
+          <p class="text-sm text-gray-500 mb-3">💩 Last poop</p>
+          <p id="last-feed-time" class="text-xl font-semibold text-[#0D4C91]">Loading...</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="mb-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="bg-white rounded-2xl p-4">
           <p class="text-sm text-gray-500 mb-3">Today's Feeds</p>
           <div id="feed-dots" class="flex gap-2 mb-3 flex-wrap">
@@ -279,6 +292,8 @@
         </div>
       </div>
     </section>
+
+
 
     <section class="mb-6">
       <h3 class="text-lg font-semibold text-[#0D4C91]">Milk Intake Progress</h3>
@@ -365,9 +380,18 @@
               <span class="text-sm font-medium text-gray-700 mb-1 block">Amount (ml)</span>
               <input name="amount" type="number" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400" placeholder="90"/>
             </label>
-            <label class="block">
+            <!-- <label class="block">
               <span class="text-sm font-medium text-gray-700 mb-1 block">Duration (min)</span>
               <input name="duration" type="number" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400" placeholder="15"/>
+            </label> -->
+             <label class="block">
+              <span class="text-sm font-medium text-gray-700 mb-1 block">Feed by</span>
+              <select name="feedBy" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400">
+                <option value="mama">Mama</option>
+                <option value="papa">Papa</option>
+                <option value="umi">Umi</option>
+                <option value="mak">Mak</option>
+              </select>
             </label>
           </div>
           
@@ -400,6 +424,24 @@
       </div>
     </div>
 
+    <div id="pump-modal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-50 modal-backdrop">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full transform scale-95 opacity-0 modal-content mx-4">
+        <form id="pump-form">
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <label class="block">
+                    <span class="text-sm font-medium text-gray-700 mb-1 block">Time</span>
+                    <input name="time" type="time" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400"/>
+                </label>
+                
+                <label class="block">
+                    <span class="text-sm font-medium text-gray-700 mb-1 block">Duration (min)</span>
+                    <input name="duration" type="number" step="1" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400" placeholder="15"/>
+                </label>
+                </div>
+            </form>
+    </div>
+</div>
+
   </div>
 
   <script>
@@ -412,6 +454,7 @@
     let supabaseClient = null;
     let records = [];
     let weightRecords = [];
+    let pumpRecords = [];
     let feedingChart = null;
     let weightChart = null;
     let dailyStatsCache = new Map();
@@ -462,12 +505,47 @@
       }
       
       if (years > 0) {
-        return years === 1 ? '1 year old' : `${years} years old`;
+        return `${years} years ${months} months old`;
       } else if (months > 0) {
-        return months === 1 ? '1 month old' : `${months} months old`;
+        return `${months} months ${days} days old`;
       } else {
         return days === 1 ? '1 day old' : `${days} days old`;
       }
+    }
+
+    function updateLastPumpCounter() {
+      const lastPumpEl = document.getElementById('last-pump-time'); // Correct ID from the HTML (was using last-feed-time)
+      if (!lastPumpEl) return;
+
+      // Sort by the created_at timestamp to find the absolute most recent record
+      const sortedRecords = [...pumpRecords].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      if (sortedRecords.length === 0) {
+        lastPumpEl.textContent = 'No pump yet';
+        return;
+      }
+    
+      const lastPumpTime = new Date(sortedRecords[0].created_at);
+      const now = new Date();
+      const diffInMinutes = Math.floor((now - lastPumpTime) / (1000 * 60));
+
+      // Reusing the time formatting logic
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      const remainingMinutes = diffInMinutes % 60;
+    
+      let timeString = '';
+      if (diffInMinutes < 1) {
+        timeString = 'Just now';
+      } else if (diffInMinutes < 60) {
+        timeString = `${diffInMinutes}m ago`;
+      } else if (diffInHours > 24) {
+        const diffInDays = Math.floor(diffInHours / 24);
+        timeString = `${diffInDays}d ago`;
+      } else {
+        timeString = `${diffInHours}h ${remainingMinutes}m ago`;
+      }
+
+      lastPumpEl.textContent = timeString;
     }
     
     // Updated function to update the "last feed" counter
@@ -518,11 +596,17 @@
       lastFeedEl.textContent = timeString;
     }
 
+    function toLocalDate(date) {
+      // Normalize to local midnight for comparison
+      const d = new Date(date);
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    }
+
     // Helper function to compare dates without time or timezone issues
     function isSameDay(date1, date2) {
-      return date1.getFullYear() === date2.getFullYear() &&
-             date1.getMonth() === date2.getMonth() &&
-             date1.getDate() === date2.getDate();
+      const d1 = toLocalDate(date1);
+      const d2 = toLocalDate(date2);
+      return d1.getTime() === d2.getTime();
     }
 
     // Optimized daily stats with caching
@@ -654,6 +738,7 @@
           const amount = record.amount || 0;
           const duration = record.duration || 0;
           const feedType = record.feed_type || 'formula';
+          const feedBy = record.feed_by || 'mama';
           const feedIcon = feedType === 'breast' ? '🤱' : '🍼';
           
           return `
@@ -666,7 +751,7 @@
                       <span>${feedIcon}</span>
                       ${time}
                     </p>
-                    <p class="text-sm text-gray-500">${duration} minutes • ${feedType}</p>
+                    <p class="text-sm text-gray-500">Feed by ${feedBy} • ${feedType}</p>
                   </div>
                 </div>
                 <div class="text-right flex items-center gap-3">
@@ -700,8 +785,8 @@
       form.querySelector('#feeding-record-id').value = record.id;
       form.querySelector('input[name="time"]').value = record.time;
       form.querySelector('select[name="feedType"]').value = record.feed_type;
+      form.querySelector('select[name="feedBy"]').value = record.feed_by;
       form.querySelector('input[name="amount"]').value = record.amount;
-      form.querySelector('input[name="duration"]').value = record.duration;
 
       // Highlight the correct quick button if applicable
       document.querySelectorAll('.quick-feed-btn').forEach(b => {
@@ -835,10 +920,18 @@
         if (weightsError) throw weightsError;
         weightRecords = weights || [];
 
+        const { data: pumps, error: pumpsError } = await supabaseClient
+          .from('pump_records') // <--- NEW TABLE NAME
+          .select('*')
+          .order('created_at', { ascending: true });
+        if (pumpsError) throw pumpsError;
+        pumpRecords = pumps || [];
+
         updateDailyView();
         updateFeedingChartForSelectedDate();
         updateTodayStatsAndWeightChart();
         updateLastFeedCounter();
+        updateLastPumpCounter();
       } catch (err) {
         console.error('Error fetching data:', err);
         alert('Could not load data from Supabase. Check console for details and ensure your anon key / table policies are correct.');
@@ -953,6 +1046,69 @@
         });
       });
 
+      // NEW: Pump Modal Controls
+      document.getElementById('add-pump-btn')?.addEventListener('click', () => {
+        const modal = document.getElementById('pump-modal');
+        if (!modal) return;
+        
+        // Set today's date and time as default
+        const now = new Date();
+        const dateInput = modal.querySelector('input[name="date"]');
+        const timeInput = modal.querySelector('input[name="time"]');
+        if (dateInput) dateInput.value = now.toISOString().slice(0, 10);
+        if (timeInput) timeInput.value = now.toTimeString().slice(0, 5);
+      
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        setTimeout(() => {
+          modal.querySelector('.modal-content')?.classList.remove('scale-95', 'opacity-0');
+        }, 10);
+      });
+      
+      document.getElementById('close-pump-modal')?.addEventListener('click', () => {
+        closeModal('pump-modal');
+      });
+      
+      // NEW: Pump Form Submission
+      document.getElementById('pump-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        
+        setLoading(submitBtn, true);
+        
+        try {
+          const fd = new FormData(form);
+          const newRec = {
+            date: fd.get('date'),
+            time: fd.get('time'), // Keep the time component for detailed records
+            amount: Number(fd.get('amount'))
+          };
+        
+          // Note: Supabase will automatically add created_at
+          const { data, error } = await supabaseClient.from('pump_records').insert([newRec]).select();
+          
+          if (error) {
+            console.error('Insert pump error:', error);
+            alert('Failed to save pump record');
+          } else {
+            // Add the new record to local array and update counter
+            pumpRecords.push(...data);
+            pumpRecords.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            
+            updateLastPumpCounter();
+            showSuccessMessage('Pump record saved successfully!');
+            closeModal('pump-modal');
+            form.reset();
+          }
+        } catch (err) {
+          console.error('Submission error:', err);
+          alert('Failed to save pump record');
+        } finally {
+          setLoading(submitBtn, false);
+        }
+      });
+
       // Enhanced form submissions with loading states
       document.getElementById('feeding-form')?.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -967,7 +1123,7 @@
           const newRec = {
             time: fd.get('time'),
             amount: Number(fd.get('amount')),
-            duration: Number(fd.get('duration')),
+            feed_by: fd.get('feedBy'),
             feed_type: fd.get('feedType')
           };
 
