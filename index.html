@@ -769,51 +769,72 @@
         const lastFeedEl = document.getElementById('last-feed-time');
         if (!lastFeedEl) return;
         
-        const sortedRecords = [...state.records.feeds].sort((a, b) => 
-          new Date(b.created_at) - new Date(a.created_at)
-        );
-        
-        if (sortedRecords.length === 0) {
+        if (state.records.feeds.length === 0) {
           lastFeedEl.textContent = 'No records yet';
           return;
         }
-
-        const lastFeedTime = new Date(sortedRecords[0].created_at);
-        lastFeedEl.textContent = utils.formatTimeAgo(lastFeedTime);
+      
+        // Sort by actual event date+time (not created_at)
+        const sortedRecords = [...state.records.feeds].sort((a, b) => {
+          const dateA = a.date || a.created_at.split('T')[0];
+          const dateB = b.date || b.created_at.split('T')[0];
+          const timestampA = new Date(`${dateA}T${a.time}`);
+          const timestampB = new Date(`${dateB}T${b.time}`);
+          return timestampB - timestampA;
+        });
+      
+        const lastRecord = sortedRecords[0];
+        const lastDate = lastRecord.date || lastRecord.created_at.split('T')[0];
+        const lastEventTime = new Date(`${lastDate}T${lastRecord.time}`);
+        lastFeedEl.textContent = utils.formatTimeAgo(lastEventTime);
       },
-
+    
       updateLastPump: () => {
         const lastPumpEl = document.getElementById('last-pump-time');
         if (!lastPumpEl) return;
-
-        const sortedRecords = [...state.records.pumps].sort((a, b) => 
-          new Date(b.created_at) - new Date(a.created_at)
-        );
-
-        if (sortedRecords.length === 0) {
+      
+        if (state.records.pumps.length === 0) {
           lastPumpEl.textContent = 'No pump yet';
           return;
         }
       
-        const lastPumpTime = new Date(sortedRecords[0].created_at);
-        lastPumpEl.textContent = utils.formatTimeAgo(lastPumpTime);
+        // Sort by actual event date+time (not created_at)
+        const sortedRecords = [...state.records.pumps].sort((a, b) => {
+          const dateA = a.date || a.created_at.split('T')[0];
+          const dateB = b.date || b.created_at.split('T')[0];
+          const timestampA = new Date(`${dateA}T${a.time}`);
+          const timestampB = new Date(`${dateB}T${b.time}`);
+          return timestampB - timestampA;
+        });
+      
+        const lastRecord = sortedRecords[0];
+        const lastDate = lastRecord.date || lastRecord.created_at.split('T')[0];
+        const lastEventTime = new Date(`${lastDate}T${lastRecord.time}`);
+        lastPumpEl.textContent = utils.formatTimeAgo(lastEventTime);
       },
-
+    
       updateLastPoop: () => {
         const lastPoopEl = document.getElementById('last-poop-time');
         if (!lastPoopEl) return;
-
-        const sortedRecords = [...state.records.poops].sort((a, b) => 
-          new Date(b.created_at) - new Date(a.created_at)
-        );
-
-        if (sortedRecords.length === 0) {
+      
+        if (state.records.poops.length === 0) {
           lastPoopEl.textContent = 'No poop yet';
           return;
         }
       
-        const lastPoopTime = new Date(sortedRecords[0].created_at);
-        lastPoopEl.textContent = utils.formatTimeAgo(lastPoopTime);
+        // Sort by actual event date+time (not created_at)
+        const sortedRecords = [...state.records.poops].sort((a, b) => {
+          const dateA = a.date || a.created_at.split('T')[0];
+          const dateB = b.date || b.created_at.split('T')[0];
+          const timestampA = new Date(`${dateA}T${a.time}`);
+          const timestampB = new Date(`${dateB}T${b.time}`);
+          return timestampB - timestampA;
+        });
+      
+        const lastRecord = sortedRecords[0];
+        const lastDate = lastRecord.date || lastRecord.created_at.split('T')[0];
+        const lastEventTime = new Date(`${lastDate}T${lastRecord.time}`);
+        lastPoopEl.textContent = utils.formatTimeAgo(lastEventTime);
       }
     };
 
