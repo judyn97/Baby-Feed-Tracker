@@ -246,10 +246,12 @@
           <p class="text-sm text-gray-500 mb-3">🍼 Last feed</p>
           <p id="last-feed-time" class="text-xl font-semibold text-[#0D4C91]">Loading...</p>
         </div>
-        <div class="bg-white rounded-2xl p-4">
-          <p class="text-sm text-gray-500 mb-3">🤱 Last pump</p>
-          <p id="last-pump-time" class="text-xl font-semibold text-[#0D4C91]">Loading...</p>
-        </div>
+        
+    <div id="pump-card-opener" role="button" tabindex="0" class="bg-white rounded-2xl p-4 hover:shadow-lg transition-shadow cursor-pointer">
+      <p class="text-sm text-gray-500 mb-3">🤱 Last pump</p>
+      <p id="last-pump-time" class="text-xl font-semibold text-[#0D4C91]">Loading...</p>
+    </div>
+    
         <div class="bg-white rounded-2xl p-4">
           <p class="text-sm text-gray-500 mb-3">💩 Last poop</p>
           <p id="last-feed-time" class="text-xl font-semibold text-[#0D4C91]">Loading...</p>
@@ -318,6 +320,32 @@
         </div>
         <div id="feeding-chart-container" class="h-64">
           <canvas id="feedingChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section class="mb-6">
+      <h3 class="text-lg font-semibold text-[#0D4C91]">Pump Progress</h3>
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2 bg-gray-100 rounded-xl p-1">
+          <button id="toggle-pump-chart" class="toggle-btn px-3 py-1 text-sm rounded-lg flex items-center gap-1 active">
+            📊
+          </button>
+          <button id="toggle-pump-history" class="toggle-btn px-3 py-1 text-sm rounded-lg flex items-center gap-1">
+            📜
+          </button>
+        </div>
+        </div>
+      <div class="bg-white rounded-2xl p-4 mb-4">
+        <div id="pump-daily-view" class="h-64 overflow-y-auto mb-4 hidden">
+          <div id="pump-daily-list" class="space-y-2"></div>
+          <div id="no-pump-daily-records" class="flex flex-col items-center justify-center h-full text-gray-500 hidden">
+            <div class="text-4xl mb-2">🥛</div>
+            <p>No pumping records for this day</p>
+          </div>
+        </div>
+        <div id="pumping-chart-container" class="h-64">
+          <canvas id="pumpingChart"></canvas>
         </div>
       </div>
     </section>
@@ -426,19 +454,59 @@
 
     <div id="pump-modal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-50 modal-backdrop">
     <div class="bg-white rounded-lg p-6 max-w-md w-full transform scale-95 opacity-0 modal-content mx-4">
+        <div class="flex justify-between items-center mb-4">
+            <h4 class="text-xl font-semibold text-[#0D4C91]">Add Pump Record</h4>
+            <button id="close-pump-modal" class="text-gray-400 hover:text-gray-600 text-xl" aria-label="Close modal">×</button>
+        </div>
         <form id="pump-form">
             <div class="grid grid-cols-2 gap-4 mb-4">
+                <label class="block">
+                    <span class="text-sm font-medium text-gray-700 mb-1 block">Date</span>
+                    <input name="date" type="date" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400"/>
+                </label>
                 <label class="block">
                     <span class="text-sm font-medium text-gray-700 mb-1 block">Time</span>
                     <input name="time" type="time" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400"/>
                 </label>
-                
+            </div>
+            <label class="block mb-6">
+                <span class="text-sm font-medium text-gray-700 mb-1 block">Amount (ml)</span>
+                <input name="amount" type="number" step="1" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400" placeholder="100"/>
+            </label>
+            <button type="submit" class="w-full py-3 bg-[#0D4C91] text-white rounded-lg hover:bg-[#2B66A4] transition-colors font-medium">
+                Save Pump Record
+            </button>
+        </form>
+    </div>
+</div>
+
+<div id="edit-pump-modal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-50 modal-backdrop">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full transform scale-95 opacity-0 modal-content mx-4">
+        <div class="flex justify-between items-center mb-4">
+            <h4 class="text-xl font-semibold text-[#0D4C91]">Edit Pump Record</h4>
+            <button id="close-edit-pump-modal" class="text-gray-400 hover:text-gray-600 text-xl" aria-label="Close modal">×</button>
+        </div>
+        <form id="edit-pump-form">
+            <input type="hidden" name="edit_id" /> 
+            
+            <div class="grid grid-cols-2 gap-4 mb-4">
                 <label class="block">
-                    <span class="text-sm font-medium text-gray-700 mb-1 block">Duration (min)</span>
-                    <input name="duration" type="number" step="1" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400" placeholder="15"/>
+                    <span class="text-sm font-medium text-gray-700 mb-1 block">Date</span>
+                    <input name="edit_date" type="date" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400"/>
                 </label>
-                </div>
-            </form>
+                <label class="block">
+                    <span class="text-sm font-medium text-gray-700 mb-1 block">Time</span>
+                    <input name="edit_time" type="time" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400"/>
+                </label>
+            </div>
+            <label class="block mb-6">
+                <span class="text-sm font-medium text-gray-700 mb-1 block">Amount (ml)</span>
+                <input name="edit_amount" type="number" step="1" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400" placeholder="100"/>
+            </label>
+            <button type="submit" class="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+                Save Changes
+            </button>
+        </form>
     </div>
 </div>
 
@@ -457,6 +525,7 @@
     let pumpRecords = [];
     let feedingChart = null;
     let weightChart = null;
+    let pumpingChart = null;
     let dailyStatsCache = new Map();
     let currentDate = new Date();
     let counterIntervalId = null;
@@ -512,6 +581,87 @@
         return days === 1 ? '1 day old' : `${days} days old`;
       }
     }
+
+    // Function to open the edit modal and populate data
+function openEditPumpModal(id) {
+  const record = pumpRecords.find(r => r.id === id);
+  if (!record) {
+    alert('Record not found.');
+    return;
+  }
+  
+  const modal = document.getElementById('edit-pump-modal');
+  if (!modal) return;
+  
+  // Populate form fields
+  modal.querySelector('input[name="edit_id"]').value = record.id;
+  // Ensure date uses the stored date field if available, or slice from created_at
+  const recordDate = record.date || record.created_at.slice(0, 10);
+  modal.querySelector('input[name="edit_date"]').value = recordDate;
+  modal.querySelector('input[name="edit_time"]').value = record.time;
+  modal.querySelector('input[name="edit_amount"]').value = record.amount;
+  
+  // Show the modal
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  setTimeout(() => {
+    modal.querySelector('.modal-content')?.classList.remove('scale-95', 'opacity-0');
+  }, 10);
+}
+
+// Function to handle the form submission for editing
+async function handleEditPumpForm(e) {
+  e.preventDefault();
+  const form = e.target;
+  const submitBtn = form.querySelector('button[type="submit"]');
+  
+  setLoading(submitBtn, true);
+  
+  try {
+    const fd = new FormData(form);
+    const id = fd.get('edit_id');
+
+    const updatedRec = {
+      date: fd.get('edit_date'),
+      time: fd.get('edit_time'), 
+      amount: Number(fd.get('edit_amount')),
+      // Important: Use 'updated_at' if your table is configured with that field.
+      // If not, Supabase handles 'created_at' and 'updated_at' automatically if configured.
+    };
+
+    const { data, error } = await supabaseClient
+      .from('pump_records')
+      .update(updatedRec)
+      .eq('id', id)
+      .select();
+    
+    if (error) {
+      console.error('Update pump error:', error);
+      alert('Failed to update pump record.');
+    } else {
+      // Update local array
+      const index = pumpRecords.findIndex(r => r.id === id);
+      if (index !== -1) {
+        // Merge the original record with the new data
+        pumpRecords[index] = { ...pumpRecords[index], ...data[0] }; 
+      }
+      
+      // Clear cache and refresh UI
+      dailyStatsCache.set('pump', new Map());
+      updateLastPumpCounter();
+      updatePumpingChartForSelectedDate();
+      updatePumpDailyView();
+      
+      showSuccessMessage('Pump record updated successfully!');
+      closeModal('edit-pump-modal');
+    }
+  } catch (err) {
+    console.error('Update submission error:', err);
+    alert('Failed to update pump record.');
+  } finally {
+    setLoading(submitBtn, false);
+  }
+}
 
     function updateLastPumpCounter() {
       const lastPumpEl = document.getElementById('last-pump-time'); // Correct ID from the HTML (was using last-feed-time)
@@ -634,6 +784,109 @@
       return dailyStatsCache.get(dateKey);
     }
 
+    function getCachedDailyPumpStats(date) {
+      const dateKey = date.toISOString().slice(0, 10);
+      
+      // Use a separate cache for pump stats
+      const pumpStatsCache = dailyStatsCache.get('pump') || new Map();
+      dailyStatsCache.set('pump', pumpStatsCache);
+
+      if (!pumpStatsCache.has(dateKey)) {
+        const dayRecords = pumpRecords.filter(r => {
+          const recordDate = new Date(r.created_at);
+          return isSameDay(recordDate, date);
+        });
+        
+        const stats = {
+          totalVolume: dayRecords.reduce((s, r) => s + (Number(r.amount) || 0), 0),
+          pumpCount: dayRecords.length,
+          records: dayRecords
+        };
+        
+        pumpStatsCache.set(dateKey, stats);
+      }
+      
+      return pumpStatsCache.get(dateKey);
+    }
+    
+    // New: Update Pump Chart
+    function updatePumpingChartForSelectedDate() {
+      // Use the same 7 days logic from the current date
+      const days = lastNDates(7, currentDate); 
+      const labels = days.map(d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+      const dailyTotals = days.map(day => {
+        const stats = getCachedDailyPumpStats(day);
+        return stats.totalVolume;
+      });
+
+      if (pumpingChart) {
+        pumpingChart.data.labels = labels;
+        pumpingChart.data.datasets[0].data = dailyTotals;
+        pumpingChart.update();
+      }
+    }
+
+    function updatePumpDailyView() {
+  const dailyStats = getCachedDailyPumpStats(currentDate);
+  const dailyRecords = dailyStats.records.sort((a, b) => {
+    // Sort by time, falling back to created_at
+    const timeA = new Date(`${a.created_at.split('T')[0]}T${a.time}:00`);
+    const timeB = new Date(`${b.created_at.split('T')[0]}T${b.time}:00`);
+    return timeB - timeA;
+  });
+
+  const dailyList = document.getElementById('pump-daily-list');
+  const noDailyRecords = document.getElementById('no-pump-daily-records');
+
+  if (dailyRecords.length === 0) {
+    dailyList.innerHTML = '';
+    noDailyRecords.classList.remove('hidden');
+  } else {
+    noDailyRecords.classList.add('hidden');
+    dailyList.innerHTML = dailyRecords.map(record => {
+      const time = record.time || new Date(record.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      const amount = record.amount || 0;
+      
+      return `
+        <div class="timeline-item feed-type-breast">
+          <div class="timeline-dot bg-[#10b981]"></div>
+          <div class="flex justify-between items-center w-full">
+            <div class="flex items-center gap-3">
+              <div>
+                <p class="font-medium text-[#0D4C91] flex items-center gap-1">
+                  <span>🤱</span>
+                  ${time}
+                </p>
+                <p class="text-sm text-gray-500">Pumped Milk</p>
+              </div>
+            </div>
+            <div class="text-right flex items-center gap-3">
+              <p class="font-semibold text-[#0D4C91]">${amount} ml</p>
+              
+              <div class="flex space-x-2">
+                <button onclick="openEditPumpModal('${record.id}')" 
+                        class="text-gray-500 hover:text-blue-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                        aria-label="Edit record">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                </button>
+                <button onclick="deletePumpRecord('${record.id}')" 
+                        class="text-gray-500 hover:text-red-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                        aria-label="Delete record">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
     function initCharts() {
       const feedingCtx = document.getElementById('feedingChart');
       if (feedingCtx) {
@@ -702,6 +955,33 @@
         });
       }
     }
+
+    const pumpingCtx = document.getElementById('pumpingChart');
+      if (pumpingCtx) {
+        pumpingChart = new Chart(pumpingCtx.getContext('2d'), {
+          type: 'bar', // Using bar for daily volume is often clearer
+          data: { 
+            labels: [], 
+            datasets: [{ 
+              label: 'Pumped Volume (ml)', 
+              data: [], 
+              backgroundColor: '#4E87C6',
+              borderColor: '#4E87C6',
+              borderWidth: 1
+            }] 
+          },
+          options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { 
+              legend: { display: false } 
+            },
+            scales: {
+              y: { beginAtZero: true }
+            }
+          }
+        });
+      }
 
     function lastNDates(n, endDate) {
         const arr = [];
@@ -830,6 +1110,37 @@
         }
     }
 
+    async function deletePumpRecord(id) {
+  if (!confirm('Are you sure you want to delete this pump record?')) {
+    return;
+  }
+  
+  try {
+    const { error } = await supabaseClient
+      .from('pump_records')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Delete pump error:', error);
+      alert('Failed to delete pump record.');
+    } else {
+      // Remove from local array
+      pumpRecords = pumpRecords.filter(r => r.id !== id);
+      
+      // Clear cache and refresh UI
+      dailyStatsCache.set('pump', new Map());
+      updateLastPumpCounter();
+      updatePumpingChartForSelectedDate();
+      updatePumpDailyView();
+      showSuccessMessage('Pump record deleted!');
+    }
+  } catch (err) {
+    console.error('Deletion error:', err);
+    alert('Failed to delete pump record.');
+  }
+}
+
     function updateFeedingChartForSelectedDate() {
       const days = lastNDates(7, currentDate);
       const labels = days.map(d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
@@ -921,7 +1232,7 @@
         weightRecords = weights || [];
 
         const { data: pumps, error: pumpsError } = await supabaseClient
-          .from('pump_records') // <--- NEW TABLE NAME
+          .from('pump_records') // <--- Corrected Table Name
           .select('*')
           .order('created_at', { ascending: true });
         if (pumpsError) throw pumpsError;
@@ -932,6 +1243,8 @@
         updateTodayStatsAndWeightChart();
         updateLastFeedCounter();
         updateLastPumpCounter();
+        updatePumpingChartForSelectedDate(); // New
+        updatePumpDailyView(); // New
       } catch (err) {
         console.error('Error fetching data:', err);
         alert('Could not load data from Supabase. Check console for details and ensure your anon key / table policies are correct.');
@@ -1046,8 +1359,16 @@
         });
       });
 
-      // NEW: Pump Modal Controls
-      document.getElementById('add-pump-btn')?.addEventListener('click', () => {
+      // NEW: Edit Pump Form Submission
+document.getElementById('edit-pump-form')?.addEventListener('submit', handleEditPumpForm);
+
+// NEW: Close handler for edit modal
+document.getElementById('close-edit-pump-modal')?.addEventListener('click', () => {
+    closeModal('edit-pump-modal');
+});
+
+      // NEW: Pump Modal Controls (Using the card div: pump-card-opener)
+      document.getElementById('pump-card-opener')?.addEventListener('click', () => { 
         const modal = document.getElementById('pump-modal');
         if (!modal) return;
         
@@ -1069,7 +1390,7 @@
         closeModal('pump-modal');
       });
       
-      // NEW: Pump Form Submission
+      // NEW: Pump Form Submission (Corrected fields and UI refresh)
       document.getElementById('pump-form')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const form = e.target;
@@ -1080,23 +1401,27 @@
         try {
           const fd = new FormData(form);
           const newRec = {
-            date: fd.get('date'),
-            time: fd.get('time'), // Keep the time component for detailed records
-            amount: Number(fd.get('amount'))
+            date: fd.get('date'), // Correctly sending date
+            time: fd.get('time'), 
+            amount: Number(fd.get('amount')) // Correctly sending amount
           };
-        
-          // Note: Supabase will automatically add created_at
+          
           const { data, error } = await supabaseClient.from('pump_records').insert([newRec]).select();
           
           if (error) {
             console.error('Insert pump error:', error);
-            alert('Failed to save pump record');
+            // Alert user about possible policy issue since data fields are now correct
+            alert('Failed to save pump record. Please check your Supabase RLS policies.'); 
           } else {
-            // Add the new record to local array and update counter
             pumpRecords.push(...data);
             pumpRecords.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
             
-            updateLastPumpCounter();
+            dailyStatsCache.set('pump', new Map()); // Clear pump stats cache
+            
+            updateLastPumpCounter(); 
+            updatePumpingChartForSelectedDate(); 
+            updatePumpDailyView(); 
+            
             showSuccessMessage('Pump record saved successfully!');
             closeModal('pump-modal');
             form.reset();
@@ -1107,6 +1432,28 @@
         } finally {
           setLoading(submitBtn, false);
         }
+      });
+
+    // New: Toggle button functionality for Pump History vs Chart
+    const pumpHistoryBtn = document.getElementById('toggle-pump-history');
+      const pumpChartBtn = document.getElementById('toggle-pump-chart');
+      const pumpDailyView = document.getElementById('pump-daily-view');
+      const pumpingChartContainer = document.getElementById('pumping-chart-container');
+      
+      pumpHistoryBtn?.addEventListener('click', () => {
+        pumpHistoryBtn.classList.add('active');
+        pumpChartBtn.classList.remove('active');
+        pumpDailyView.classList.remove('hidden');
+        pumpingChartContainer.classList.add('hidden');
+        updatePumpDailyView(); 
+      });
+      
+      pumpChartBtn?.addEventListener('click', () => {
+        pumpChartBtn.classList.add('active');
+        pumpHistoryBtn.classList.remove('active');
+        pumpDailyView.classList.add('hidden');
+        pumpingChartContainer.classList.remove('hidden');
+        updatePumpingChartForSelectedDate();
       });
 
       // Enhanced form submissions with loading states
