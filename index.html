@@ -25,7 +25,6 @@
       font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; 
     }
     
-    /* Responsive circular progress */
     .circular-progress { 
       position: relative; 
       width: min(120px, 25vw); 
@@ -52,7 +51,6 @@
       color: var(--primary-700);
     }
 
-    /* Enhanced modal animations */
     .modal-backdrop {
       backdrop-filter: blur(4px);
       animation: fadeIn 0.3s ease-out;
@@ -64,7 +62,6 @@
       overflow-y: auto;
     }
 
-    /* Quick action buttons */
     .quick-feed-btn {
       transition: all 0.2s ease;
       border: 2px solid var(--primary-100);
@@ -80,7 +77,6 @@
       border-color: var(--primary-500);
     }
     
-    /* Toggle header buttons */
     .toggle-btn.active {
       background: white;
       box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
@@ -90,14 +86,12 @@
     .toggle-btn:not(.active) {
       background: transparent;
       box-shadow: none;
-      color: #6b7280; /* gray-600 */
+      color: #6b7280;
     }
     .toggle-btn:not(.active):hover {
       color: var(--primary-900);
     }
 
-
-    /* Loading state */
     .loading {
       opacity: 0.6;
       pointer-events: none;
@@ -117,7 +111,6 @@
       animation: spin 1s linear infinite;
     }
 
-    /* Success message */
     .success-message {
       background: var(--success);
       color: white;
@@ -127,7 +120,6 @@
       animation: slideInDown 0.3s ease-out;
     }
 
-    /* Timeline view */
     .timeline-item {
       display: flex;
       align-items: center;
@@ -143,6 +135,7 @@
     }
     .feed-type-formula .timeline-dot { background: var(--primary-500); }
     .feed-type-breast .timeline-dot { background: var(--success); }
+    .feed-type-poop .timeline-dot { background: #8b5cf6; }
     
     .timeline-actions {
       display: flex;
@@ -161,14 +154,11 @@
       color: var(--primary-700);
     }
 
-
-    /* Better touch targets for mobile */
     button, .touch-target {
       min-height: 44px;
       touch-action: manipulation;
     }
 
-    /* Focus indicators */
     button:focus, input:focus, select:focus {
       outline: 2px solid var(--primary-500);
       outline-offset: 2px;
@@ -190,7 +180,6 @@
         filter: invert(0.5);
     }
 
-    /* Animations */
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
@@ -204,12 +193,11 @@
       100% { transform: rotate(360deg); }
     }
 
-    /* Responsive improvements */
     @media (max-width: 640px) {
       .container { padding-left: 1rem; padding-right: 1rem; }
       .grid { grid-template-columns: 1fr; }
       .modal-content { margin: 1rem; max-width: calc(100vw - 2rem); }
-      .timeline-actions { opacity: 1; } /* Always show on mobile for better accessibility */
+      .timeline-actions { opacity: 1; }
     }
   </style>
 </head>
@@ -241,20 +229,20 @@
     </div>
     
     <section class="mb-6">
-      <div class="grid grid-cols-2 sm:grid-cols-2 gap-4">
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <div class="bg-white rounded-2xl p-4">
           <p class="text-sm text-gray-500 mb-3">🍼 Last feed</p>
           <p id="last-feed-time" class="text-xl font-semibold text-[#0D4C91]">Loading...</p>
         </div>
         
-    <div id="pump-card-opener" role="button" tabindex="0" class="bg-white rounded-2xl p-4 hover:shadow-lg transition-shadow cursor-pointer">
-      <p class="text-sm text-gray-500 mb-3">🤱 Last pump</p>
-      <p id="last-pump-time" class="text-xl font-semibold text-[#0D4C91]">Loading...</p>
-    </div>
+        <div id="pump-card-opener" role="button" tabindex="0" class="bg-white rounded-2xl p-4 hover:shadow-lg transition-shadow cursor-pointer">
+          <p class="text-sm text-gray-500 mb-3">🤱 Last pump</p>
+          <p id="last-pump-time" class="text-xl font-semibold text-[#0D4C91]">Loading...</p>
+        </div>
     
-        <div class="bg-white rounded-2xl p-4">
+        <div id="poop-card-opener" role="button" tabindex="0" class="bg-white rounded-2xl p-4 hover:shadow-lg transition-shadow cursor-pointer">
           <p class="text-sm text-gray-500 mb-3">💩 Last poop</p>
-          <p id="last-feed-time" class="text-xl font-semibold text-[#0D4C91]">Loading...</p>
+          <p id="last-poop-time" class="text-xl font-semibold text-[#0D4C91]">Loading...</p>
         </div>
       </div>
     </section>
@@ -295,8 +283,6 @@
       </div>
     </section>
 
-
-
     <section class="mb-6">
       <h3 class="text-lg font-semibold text-[#0D4C91]">Milk Intake Progress</h3>
       <div class="flex items-center justify-between mb-4">
@@ -335,7 +321,7 @@
             📜
           </button>
         </div>
-        </div>
+      </div>
       <div class="bg-white rounded-2xl p-4 mb-4">
         <div id="pump-daily-view" class="h-64 overflow-y-auto mb-4 hidden">
           <div id="pump-daily-list" class="space-y-2"></div>
@@ -346,6 +332,26 @@
         </div>
         <div id="pumping-chart-container" class="h-64">
           <canvas id="pumpingChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section class="mb-6">
+      <h3 class="text-lg font-semibold text-[#0D4C91]">Poop Log</h3>
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2 bg-gray-100 rounded-xl p-1">
+          <button id="toggle-poop-history" class="toggle-btn px-3 py-1 text-sm rounded-lg flex items-center gap-1 active">
+            📜
+          </button>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl p-4 mb-4">
+        <div id="poop-daily-view" class="h-64 overflow-y-auto mb-4">
+          <div id="poop-daily-list" class="space-y-2"></div>
+          <div id="no-poop-daily-records" class="flex flex-col items-center justify-center h-full text-gray-500 hidden">
+            <div class="text-4xl mb-2">💩</div>
+            <p>No diaper records for this day</p>
+          </div>
         </div>
       </div>
     </section>
@@ -369,6 +375,7 @@
       </button>
     </div>
 
+    <!-- Feeding Modal -->
     <div id="feeding-modal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-50 modal-backdrop">
       <div class="bg-white rounded-lg p-6 max-w-md w-full transform scale-95 opacity-0 modal-content mx-4">
         <div class="flex justify-between items-center mb-4">
@@ -408,11 +415,7 @@
               <span class="text-sm font-medium text-gray-700 mb-1 block">Amount (ml)</span>
               <input name="amount" type="number" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400" placeholder="90"/>
             </label>
-            <!-- <label class="block">
-              <span class="text-sm font-medium text-gray-700 mb-1 block">Duration (min)</span>
-              <input name="duration" type="number" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400" placeholder="15"/>
-            </label> -->
-             <label class="block">
+            <label class="block">
               <span class="text-sm font-medium text-gray-700 mb-1 block">Feed by</span>
               <select name="feedBy" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400">
                 <option value="mama">Mama</option>
@@ -430,6 +433,7 @@
       </div>
     </div>
 
+    <!-- Weight Modal -->
     <div id="weight-modal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-50 modal-backdrop">
       <div class="bg-white rounded-lg p-6 max-w-md w-full transform scale-95 opacity-0 modal-content mx-4">
         <div class="flex justify-between items-center mb-4">
@@ -452,818 +456,1193 @@
       </div>
     </div>
 
+    <!-- Pump Modal -->
     <div id="pump-modal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-50 modal-backdrop">
-    <div class="bg-white rounded-lg p-6 max-w-md w-full transform scale-95 opacity-0 modal-content mx-4">
+      <div class="bg-white rounded-lg p-6 max-w-md w-full transform scale-95 opacity-0 modal-content mx-4">
         <div class="flex justify-between items-center mb-4">
-            <h4 class="text-xl font-semibold text-[#0D4C91]">Add Pump Record</h4>
-            <button id="close-pump-modal" class="text-gray-400 hover:text-gray-600 text-xl" aria-label="Close modal">×</button>
+          <h4 class="text-xl font-semibold text-[#0D4C91]">Add Pump Record</h4>
+          <button id="close-pump-modal" class="text-gray-400 hover:text-gray-600 text-xl" aria-label="Close modal">×</button>
         </div>
         <form id="pump-form">
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                <label class="block">
-                    <span class="text-sm font-medium text-gray-700 mb-1 block">Date</span>
-                    <input name="date" type="date" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400"/>
-                </label>
-                <label class="block">
-                    <span class="text-sm font-medium text-gray-700 mb-1 block">Time</span>
-                    <input name="time" type="time" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400"/>
-                </label>
-            </div>
-            <label class="block mb-6">
-                <span class="text-sm font-medium text-gray-700 mb-1 block">Amount (ml)</span>
-                <input name="amount" type="number" step="1" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400" placeholder="100"/>
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <label class="block">
+              <span class="text-sm font-medium text-gray-700 mb-1 block">Date</span>
+              <input name="date" type="date" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400"/>
             </label>
-            <button type="submit" class="w-full py-3 bg-[#0D4C91] text-white rounded-lg hover:bg-[#2B66A4] transition-colors font-medium">
-                Save Pump Record
-            </button>
+            <label class="block">
+              <span class="text-sm font-medium text-gray-700 mb-1 block">Time</span>
+              <input name="time" type="time" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400"/>
+            </label>
+          </div>
+          <label class="block mb-6">
+            <span class="text-sm font-medium text-gray-700 mb-1 block">Amount (ml)</span>
+            <input name="amount" type="number" step="1" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400" placeholder="100"/>
+          </label>
+          <button type="submit" class="w-full py-3 bg-[#0D4C91] text-white rounded-lg hover:bg-[#2B66A4] transition-colors font-medium">
+            Save Pump Record
+          </button>
         </form>
+      </div>
     </div>
-</div>
 
-<div id="edit-pump-modal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-50 modal-backdrop">
-    <div class="bg-white rounded-lg p-6 max-w-md w-full transform scale-95 opacity-0 modal-content mx-4">
+    <!-- Edit Pump Modal -->
+    <div id="edit-pump-modal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-50 modal-backdrop">
+      <div class="bg-white rounded-lg p-6 max-w-md w-full transform scale-95 opacity-0 modal-content mx-4">
         <div class="flex justify-between items-center mb-4">
-            <h4 class="text-xl font-semibold text-[#0D4C91]">Edit Pump Record</h4>
-            <button id="close-edit-pump-modal" class="text-gray-400 hover:text-gray-600 text-xl" aria-label="Close modal">×</button>
+          <h4 class="text-xl font-semibold text-[#0D4C91]">Edit Pump Record</h4>
+          <button id="close-edit-pump-modal" class="text-gray-400 hover:text-gray-600 text-xl" aria-label="Close modal">×</button>
         </div>
         <form id="edit-pump-form">
-            <input type="hidden" name="edit_id" /> 
-            
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                <label class="block">
-                    <span class="text-sm font-medium text-gray-700 mb-1 block">Date</span>
-                    <input name="edit_date" type="date" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400"/>
-                </label>
-                <label class="block">
-                    <span class="text-sm font-medium text-gray-700 mb-1 block">Time</span>
-                    <input name="edit_time" type="time" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400"/>
-                </label>
-            </div>
-            <label class="block mb-6">
-                <span class="text-sm font-medium text-gray-700 mb-1 block">Amount (ml)</span>
-                <input name="edit_amount" type="number" step="1" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400" placeholder="100"/>
+          <input type="hidden" name="edit_id" /> 
+          
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <label class="block">
+              <span class="text-sm font-medium text-gray-700 mb-1 block">Date</span>
+              <input name="edit_date" type="date" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400"/>
             </label>
-            <button type="submit" class="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
-                Save Changes
-            </button>
+            <label class="block">
+              <span class="text-sm font-medium text-gray-700 mb-1 block">Time</span>
+              <input name="edit_time" type="time" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400"/>
+            </label>
+          </div>
+          <label class="block mb-6">
+            <span class="text-sm font-medium text-gray-700 mb-1 block">Amount (ml)</span>
+            <input name="edit_amount" type="number" step="1" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400" placeholder="100"/>
+          </label>
+          <button type="submit" class="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+            Save Changes
+          </button>
         </form>
+      </div>
     </div>
-</div>
+
+    <!-- Poop Modal -->
+    <div id="poop-modal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-50 modal-backdrop">
+      <div class="bg-white rounded-lg p-6 max-w-md w-full transform scale-95 opacity-0 modal-content mx-4">
+        <div class="flex justify-between items-center mb-4">
+          <h4 class="text-xl font-semibold text-[#0D4C91]">Add Poop Record</h4>
+          <button id="close-poop-modal" class="text-gray-400 hover:text-gray-600 text-xl" aria-label="Close modal">×</button>
+        </div>
+        <form id="poop-form">
+          <div class="grid grid-cols-2 gap-4 mb-6">
+            <label class="block">
+              <span class="text-sm font-medium text-gray-700 mb-1 block">Date</span>
+              <input name="date" type="date" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400"/>
+            </label>
+            <label class="block">
+              <span class="text-sm font-medium text-gray-700 mb-1 block">Time</span>
+              <input name="time" type="time" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400"/>
+            </label>
+          </div>
+          <button type="submit" class="w-full py-3 bg-[#0D4C91] text-white rounded-lg hover:bg-[#2B66A4] transition-colors font-medium">
+            Save Poop Record
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Edit Poop Modal -->
+    <div id="edit-poop-modal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-50 modal-backdrop">
+      <div class="bg-white rounded-lg p-6 max-w-md w-full transform scale-95 opacity-0 modal-content mx-4">
+        <div class="flex justify-between items-center mb-4">
+          <h4 class="text-xl font-semibold text-[#0D4C91]">Edit Poop Record</h4>
+          <button id="close-edit-poop-modal" class="text-gray-400 hover:text-gray-600 text-xl" aria-label="Close modal">×</button>
+        </div>
+        <form id="edit-poop-form">
+          <input type="hidden" name="edit_id" /> 
+          
+          <div class="grid grid-cols-2 gap-4 mb-6">
+            <label class="block">
+              <span class="text-sm font-medium text-gray-700 mb-1 block">Date</span>
+              <input name="edit_date" type="date" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400"/>
+            </label>
+            <label class="block">
+              <span class="text-sm font-medium text-gray-700 mb-1 block">Time</span>
+              <input name="edit_time" type="time" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400"/>
+            </label>
+          </div>
+          <button type="submit" class="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+            Save Changes
+          </button>
+        </form>
+      </div>
+    </div>
 
   </div>
 
   <script>
-    // ---------- CONFIG - REPLACE WITH YOUR VALUES ----------
-    const SUPABASE_URL = 'https://zcswceithnpruwasljro.supabase.co'; // <- replace
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpjc3djZWl0aG5wcnV3YXNsanJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwMzgxOTEsImV4cCI6MjA3MjYxNDE5MX0.tJHzK0AaVDxBJU3JDEbAu_eYeZ9ShWvOjby6OtOHwz4'; // <- replace (use anon/public key, never use service_role on client)
-    // -----------------------------------------------------
+    // ==================== CONFIGURATION ====================
+    const SUPABASE_URL = 'https://zcswceithnpruwasljro.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpjc3djZWl0aG5wcnV3YXNsanJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwMzgxOTEsImV4cCI6MjA3MjYxNDE5MX0.tJHzK0AaVDxBJU3JDEbAu_eYeZ9ShWvOjby6OtOHwz4';
+    const BABY_BIRTH_DATE = '2025-08-23';
 
-    // State
-    let supabaseClient = null;
-    let records = [];
-    let weightRecords = [];
-    let pumpRecords = [];
-    let feedingChart = null;
-    let weightChart = null;
-    let pumpingChart = null;
-    let dailyStatsCache = new Map();
-    let currentDate = new Date();
-    let counterIntervalId = null;
-
-    // Enhanced helpers
-    function safeText(id, value) { 
-      const el = document.getElementById(id); 
-      if (el) el.textContent = value; 
-    }
-
-    function showSuccessMessage(message) {
-      const successEl = document.getElementById('success-message');
-      const textEl = document.getElementById('success-text');
-      if (successEl && textEl) {
-        textEl.textContent = message;
-        successEl.classList.remove('hidden');
-        setTimeout(() => successEl.classList.add('hidden'), 3000);
-      }
-    }
-
-    function setLoading(element, loading = true) {
-      if (loading) {
-        element.classList.add('loading');
-      } else {
-        element.classList.remove('loading');
-      }
-    }
-
-    function calculateAge(birthDate) {
-      const birth = new Date(birthDate);
-      const today = new Date();
-      
-      let years = today.getFullYear() - birth.getFullYear();
-      let months = today.getMonth() - birth.getMonth();
-      let days = today.getDate() - birth.getDate();
-      
-      if (days < 0) {
-        months--;
-        const daysInPrevMonth = new Date(today.getFullYear(), today.getMonth(), 0).getDate();
-        days += daysInPrevMonth;
-      }
-      
-      if (months < 0) {
-        years--;
-        months += 12;
-      }
-      
-      if (years > 0) {
-        return `${years} years ${months} months old`;
-      } else if (months > 0) {
-        return `${months} months ${days} days old`;
-      } else {
-        return days === 1 ? '1 day old' : `${days} days old`;
-      }
-    }
-
-    // Function to open the edit modal and populate data
-function openEditPumpModal(id) {
-  const record = pumpRecords.find(r => r.id === id);
-  if (!record) {
-    alert('Record not found.');
-    return;
-  }
-  
-  const modal = document.getElementById('edit-pump-modal');
-  if (!modal) return;
-  
-  // Populate form fields
-  modal.querySelector('input[name="edit_id"]').value = record.id;
-  // Ensure date uses the stored date field if available, or slice from created_at
-  const recordDate = record.date || record.created_at.slice(0, 10);
-  modal.querySelector('input[name="edit_date"]').value = recordDate;
-  modal.querySelector('input[name="edit_time"]').value = record.time;
-  modal.querySelector('input[name="edit_amount"]').value = record.amount;
-  
-  // Show the modal
-  modal.classList.remove('hidden');
-  modal.classList.add('flex');
-  setTimeout(() => {
-    modal.querySelector('.modal-content')?.classList.remove('scale-95', 'opacity-0');
-  }, 10);
-}
-
-// Function to handle the form submission for editing
-async function handleEditPumpForm(e) {
-  e.preventDefault();
-  const form = e.target;
-  const submitBtn = form.querySelector('button[type="submit"]');
-  
-  setLoading(submitBtn, true);
-  
-  try {
-    const fd = new FormData(form);
-    const id = fd.get('edit_id');
-
-    const updatedRec = {
-      date: fd.get('edit_date'),
-      time: fd.get('edit_time'), 
-      amount: Number(fd.get('edit_amount')),
-      // Important: Use 'updated_at' if your table is configured with that field.
-      // If not, Supabase handles 'created_at' and 'updated_at' automatically if configured.
+    // ==================== STATE MANAGEMENT ====================
+    const state = {
+      supabaseClient: null,
+      records: {
+        feeds: [],
+        weights: [],
+        pumps: [],
+        poops: []
+      },
+      charts: {
+        feeding: null,
+        weight: null,
+        pumping: null
+      },
+      cache: {
+        dailyStats: new Map(),
+        pumpStats: new Map(),
+        poopStats: new Map()
+      },
+      currentDate: new Date(),
+      counterIntervalId: null
     };
 
-    const { data, error } = await supabaseClient
-      .from('pump_records')
-      .update(updatedRec)
-      .eq('id', id)
-      .select();
-    
-    if (error) {
-      console.error('Update pump error:', error);
-      alert('Failed to update pump record.');
-    } else {
-      // Update local array
-      const index = pumpRecords.findIndex(r => r.id === id);
-      if (index !== -1) {
-        // Merge the original record with the new data
-        pumpRecords[index] = { ...pumpRecords[index], ...data[0] }; 
+    // ==================== UTILITY FUNCTIONS ====================
+    const utils = {
+      safeText: (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      },
+
+      showSuccessMessage: (message) => {
+        const successEl = document.getElementById('success-message');
+        const textEl = document.getElementById('success-text');
+        if (successEl && textEl) {
+          textEl.textContent = message;
+          successEl.classList.remove('hidden');
+          setTimeout(() => successEl.classList.add('hidden'), 3000);
+        }
+      },
+
+      setLoading: (element, loading = true) => {
+        if (loading) {
+          element.classList.add('loading');
+        } else {
+          element.classList.remove('loading');
+        }
+      },
+
+      calculateAge: (birthDate) => {
+        const birth = new Date(birthDate);
+        const today = new Date();
+        
+        let years = today.getFullYear() - birth.getFullYear();
+        let months = today.getMonth() - birth.getMonth();
+        let days = today.getDate() - birth.getDate();
+        
+        if (days < 0) {
+          months--;
+          const daysInPrevMonth = new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+          days += daysInPrevMonth;
+        }
+        
+        if (months < 0) {
+          years--;
+          months += 12;
+        }
+        
+        if (years > 0) {
+          return `${years} years ${months} months old`;
+        } else if (months > 0) {
+          return `${months} months ${days} days old`;
+        } else {
+          return days === 1 ? '1 day old' : `${days} days old`;
+        }
+      },
+
+      toLocalDate: (date) => {
+        const d = new Date(date);
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      },
+
+      isSameDay: (date1, date2) => {
+        const d1 = utils.toLocalDate(date1);
+        const d2 = utils.toLocalDate(date2);
+        return d1.getTime() === d2.getTime();
+      },
+
+      lastNDates: (n, endDate) => {
+        const arr = [];
+        const end = new Date(endDate);
+        end.setHours(0, 0, 0, 0);
+        for (let i = n - 1; i >= 0; i--) {
+          const d = new Date(end);
+          d.setDate(d.getDate() - i);
+          arr.push(new Date(d));
+        }
+        return arr;
+      },
+
+      formatTimeAgo: (timestamp) => {
+        const now = new Date();
+        const diffInMinutes = Math.floor((now - timestamp) / (1000 * 60));
+        const diffInHours = Math.floor(diffInMinutes / 60);
+        const remainingMinutes = diffInMinutes % 60;
+
+        if (diffInMinutes < 1) {
+          return 'Just now';
+        } else if (diffInMinutes < 60) {
+          return `${diffInMinutes}m ago`;
+        } else if (diffInHours > 24) {
+          const diffInDays = Math.floor(diffInHours / 24);
+          return `${diffInDays}d ago`;
+        } else {
+          return `${diffInHours}h ${remainingMinutes}m ago`;
+        }
+      },
+
+      closeModal: (modalId) => {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        
+        const content = modal.querySelector('.modal-content');
+        if (content) {
+          content.classList.add('scale-95', 'opacity-0');
+        }
+        
+        setTimeout(() => {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+        }, 300);
+      },
+
+      openModal: (modalId) => {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        setTimeout(() => {
+          modal.querySelector('.modal-content')?.classList.remove('scale-95', 'opacity-0');
+        }, 10);
       }
-      
-      // Clear cache and refresh UI
-      dailyStatsCache.set('pump', new Map());
-      updateLastPumpCounter();
-      updatePumpingChartForSelectedDate();
-      updatePumpDailyView();
-      
-      showSuccessMessage('Pump record updated successfully!');
-      closeModal('edit-pump-modal');
-    }
-  } catch (err) {
-    console.error('Update submission error:', err);
-    alert('Failed to update pump record.');
-  } finally {
-    setLoading(submitBtn, false);
-  }
-}
+    };
 
-    function updateLastPumpCounter() {
-      const lastPumpEl = document.getElementById('last-pump-time'); // Correct ID from the HTML (was using last-feed-time)
-      if (!lastPumpEl) return;
+    // ==================== RECORD MANAGER (Generic CRUD) ====================
+    const recordManager = {
+      async fetch(tableName) {
+        const { data, error } = await state.supabaseClient
+          .from(tableName)
+          .select('*')
+          .order('created_at', { ascending: true });
+        
+        if (error) throw error;
+        return data || [];
+      },
 
-      // Sort by the created_at timestamp to find the absolute most recent record
-      const sortedRecords = [...pumpRecords].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      async create(tableName, record) {
+        const { data, error } = await state.supabaseClient
+          .from(tableName)
+          .insert([record])
+          .select();
+        
+        if (error) throw error;
+        return data;
+      },
 
-      if (sortedRecords.length === 0) {
-        lastPumpEl.textContent = 'No pump yet';
-        return;
+      async update(tableName, id, record) {
+        const { data, error } = await state.supabaseClient
+          .from(tableName)
+          .update(record)
+          .eq('id', id)
+          .select();
+        
+        if (error) throw error;
+        return data;
+      },
+
+      async delete(tableName, id) {
+        const { error } = await state.supabaseClient
+          .from(tableName)
+          .delete()
+          .eq('id', id);
+        
+        if (error) throw error;
       }
-    
-      const lastPumpTime = new Date(sortedRecords[0].created_at);
-      const now = new Date();
-      const diffInMinutes = Math.floor((now - lastPumpTime) / (1000 * 60));
+    };
 
-      // Reusing the time formatting logic
-      const diffInHours = Math.floor(diffInMinutes / 60);
-      const remainingMinutes = diffInMinutes % 60;
-    
-      let timeString = '';
-      if (diffInMinutes < 1) {
-        timeString = 'Just now';
-      } else if (diffInMinutes < 60) {
-        timeString = `${diffInMinutes}m ago`;
-      } else if (diffInHours > 24) {
-        const diffInDays = Math.floor(diffInHours / 24);
-        timeString = `${diffInDays}d ago`;
-      } else {
-        timeString = `${diffInHours}h ${remainingMinutes}m ago`;
+    // ==================== COUNTER UPDATES ====================
+    const counterUpdates = {
+      updateLastFeed: () => {
+        const lastFeedEl = document.getElementById('last-feed-time');
+        if (!lastFeedEl) return;
+        
+        const sortedRecords = [...state.records.feeds].sort((a, b) => 
+          new Date(b.created_at) - new Date(a.created_at)
+        );
+        
+        if (sortedRecords.length === 0) {
+          lastFeedEl.textContent = 'No records yet';
+          return;
+        }
+
+        const lastFeedTime = new Date(sortedRecords[0].created_at);
+        lastFeedEl.textContent = utils.formatTimeAgo(lastFeedTime);
+      },
+
+      updateLastPump: () => {
+        const lastPumpEl = document.getElementById('last-pump-time');
+        if (!lastPumpEl) return;
+
+        const sortedRecords = [...state.records.pumps].sort((a, b) => 
+          new Date(b.created_at) - new Date(a.created_at)
+        );
+
+        if (sortedRecords.length === 0) {
+          lastPumpEl.textContent = 'No pump yet';
+          return;
+        }
+      
+        const lastPumpTime = new Date(sortedRecords[0].created_at);
+        lastPumpEl.textContent = utils.formatTimeAgo(lastPumpTime);
+      },
+
+      updateLastPoop: () => {
+        const lastPoopEl = document.getElementById('last-poop-time');
+        if (!lastPoopEl) return;
+
+        const sortedRecords = [...state.records.poops].sort((a, b) => 
+          new Date(b.created_at) - new Date(a.created_at)
+        );
+
+        if (sortedRecords.length === 0) {
+          lastPoopEl.textContent = 'No poop yet';
+          return;
+        }
+      
+        const lastPoopTime = new Date(sortedRecords[0].created_at);
+        lastPoopEl.textContent = utils.formatTimeAgo(lastPoopTime);
       }
+    };
 
-      lastPumpEl.textContent = timeString;
-    }
-    
-    // Updated function to update the "last feed" counter
-    function updateLastFeedCounter() {
-      const lastFeedEl = document.getElementById('last-feed-time');
-      if (!lastFeedEl) return;
-      
-      // We sort by the created_at timestamp to find the absolute most recent record
-      const sortedRecords = [...records].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      
-      if (sortedRecords.length === 0) {
-        lastFeedEl.textContent = 'No records yet';
-        return;
+    // ==================== STATISTICS CACHE ====================
+    const statsCache = {
+      getFeedStats: (date) => {
+        const dateKey = date.toISOString().slice(0, 10);
+        
+        if (!state.cache.dailyStats.has(dateKey)) {
+          const dayRecords = state.records.feeds.filter(r => {
+            const recordDate = new Date(r.created_at);
+            return utils.isSameDay(recordDate, date);
+          });
+          
+          const stats = {
+            totalVolume: dayRecords.reduce((s, r) => s + (Number(r.amount) || 0), 0),
+            feedCount: dayRecords.length,
+            formulaCount: dayRecords.filter(r => r.feed_type === 'formula').length,
+            breastCount: dayRecords.filter(r => r.feed_type === 'breast').length,
+            records: dayRecords
+          };
+          
+          state.cache.dailyStats.set(dateKey, stats);
+        }
+        
+        return state.cache.dailyStats.get(dateKey);
+      },
+
+      getPumpStats: (date) => {
+        const dateKey = date.toISOString().slice(0, 10);
+        
+        if (!state.cache.pumpStats.has(dateKey)) {
+          const dayRecords = state.records.pumps.filter(r => {
+            const recordDate = new Date(r.created_at);
+            return utils.isSameDay(recordDate, date);
+          });
+          
+          const stats = {
+            totalVolume: dayRecords.reduce((s, r) => s + (Number(r.amount) || 0), 0),
+            pumpCount: dayRecords.length,
+            records: dayRecords
+          };
+          
+          state.cache.pumpStats.set(dateKey, stats);
+        }
+        
+        return state.cache.pumpStats.get(dateKey);
+      },
+
+      getPoopStats: (date) => {
+        const dateKey = date.toISOString().slice(0, 10);
+        
+        if (!state.cache.poopStats.has(dateKey)) {
+          const dayRecords = state.records.poops.filter(r => {
+            const recordDate = new Date(r.created_at);
+            return utils.isSameDay(recordDate, date);
+          });
+          
+          const stats = {
+            poopCount: dayRecords.length,
+            records: dayRecords
+          };
+          
+          state.cache.poopStats.set(dateKey, stats);
+        }
+        
+        return state.cache.poopStats.get(dateKey);
+      },
+
+      clearAll: () => {
+        state.cache.dailyStats.clear();
+        state.cache.pumpStats.clear();
+        state.cache.poopStats.clear();
       }
+    };
 
-      const lastFeedTime = new Date(sortedRecords[0].created_at); // This is likely a full timestamp and works fine
-      const supabaseTime = sortedRecords[0].time; // This is just the time string, e.g., "14:30:00"
-
-      // Combine the current date with the time from Supabase
-      const now = new Date();
-      const [hours, minutes, seconds] = supabaseTime.split(':').map(Number);
-      const lastFeedTimeFromSupabase = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate(),
-        hours,
-        minutes,
-        seconds
-      );
-
-      // Now, use the new variable for your calculations
-      const diffInMinutes = Math.floor((now - lastFeedTimeFromSupabase) / (1000 * 60));
-      const diffInHours = Math.floor(diffInMinutes / 60);
-      const remainingMinutes = diffInMinutes % 60;
-
-      let timeString = '';
-      if (diffInMinutes < 1) {
-        timeString = 'Just now';
-      } else if (diffInMinutes < 60) {
-        timeString = `${diffInMinutes}m ago`;
-      } else if (diffInHours > 24) {
-        const diffInDays = Math.floor(diffInHours / 24);
-        timeString = `${diffInDays}d ago`;
-      } else {
-        timeString = `${diffInHours}h ${remainingMinutes}m ago`;
-      }
-      
-      lastFeedEl.textContent = timeString;
-    }
-
-    function toLocalDate(date) {
-      // Normalize to local midnight for comparison
-      const d = new Date(date);
-      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    }
-
-    // Helper function to compare dates without time or timezone issues
-    function isSameDay(date1, date2) {
-      const d1 = toLocalDate(date1);
-      const d2 = toLocalDate(date2);
-      return d1.getTime() === d2.getTime();
-    }
-
-    // Optimized daily stats with caching
-    function getCachedDailyStats(date) {
-      const dateKey = date.toISOString().slice(0, 10);
-      
-      if (!dailyStatsCache.has(dateKey)) {
-        const dayRecords = records.filter(r => {
-          const recordDate = new Date(r.created_at);
-          return isSameDay(recordDate, date);
+    // ==================== UI RENDERERS ====================
+    const uiRenderers = {
+      renderFeedList: () => {
+        const dailyStats = statsCache.getFeedStats(state.currentDate);
+        const dailyRecords = dailyStats.records.sort((a, b) => {
+          const timeA = new Date(`${a.created_at.split('T')[0]}T${a.time}:00`);
+          const timeB = new Date(`${b.created_at.split('T')[0]}T${b.time}:00`);
+          return timeB - timeA;
         });
-        
-        const stats = {
-          totalVolume: dayRecords.reduce((s, r) => s + (Number(r.amount) || 0), 0),
-          feedCount: dayRecords.length,
-          avgDuration: dayRecords.length > 0 ? dayRecords.reduce((s, r) => s + (Number(r.duration) || 0), 0) / dayRecords.length : 0,
-          formulaCount: dayRecords.filter(r => r.feed_type === 'formula').length,
-          breastCount: dayRecords.filter(r => r.feed_type === 'breast').length,
-          records: dayRecords
-        };
-        
-        dailyStatsCache.set(dateKey, stats);
-      }
-      
-      return dailyStatsCache.get(dateKey);
-    }
 
-    function getCachedDailyPumpStats(date) {
-      const dateKey = date.toISOString().slice(0, 10);
-      
-      // Use a separate cache for pump stats
-      const pumpStatsCache = dailyStatsCache.get('pump') || new Map();
-      dailyStatsCache.set('pump', pumpStatsCache);
+        const dailyList = document.getElementById('daily-list');
+        const noDailyRecords = document.getElementById('no-daily-records');
 
-      if (!pumpStatsCache.has(dateKey)) {
-        const dayRecords = pumpRecords.filter(r => {
-          const recordDate = new Date(r.created_at);
-          return isSameDay(recordDate, date);
+        if (dailyRecords.length === 0) {
+          dailyList.innerHTML = '';
+          noDailyRecords.classList.remove('hidden');
+        } else {
+          noDailyRecords.classList.add('hidden');
+          dailyList.innerHTML = dailyRecords.map(record => {
+            const time = record.time || new Date(record.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            const amount = record.amount || 0;
+            const feedType = record.feed_type || 'formula';
+            const feedBy = record.feed_by || 'mama';
+            const feedIcon = feedType === 'breast' ? '🤱' : '🍼';
+            
+            return `
+              <div class="timeline-item feed-type-${feedType}">
+                <div class="timeline-dot"></div>
+                <div class="flex justify-between items-center w-full">
+                  <div class="flex items-center gap-3">
+                    <div>
+                      <p class="font-medium text-[#0D4C91] flex items-center gap-1">
+                        <span>${feedIcon}</span>
+                        ${time}
+                      </p>
+                      <p class="text-sm text-gray-500">Feed by ${feedBy} • ${feedType}</p>
+                    </div>
+                  </div>
+                  <div class="text-right flex items-center gap-3">
+                    <p class="font-semibold text-[#0D4C91]">${amount} ml</p>
+                    <div class="timeline-actions">
+                      <button class="action-btn" onclick="feedHandlers.edit('${record.id}')" aria-label="Edit record">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                      </button>
+                      <button class="action-btn" onclick="feedHandlers.delete('${record.id}')" aria-label="Delete record">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      },
+
+      renderPumpList: () => {
+        const dailyStats = statsCache.getPumpStats(state.currentDate);
+        const dailyRecords = dailyStats.records.sort((a, b) => {
+          const timeA = new Date(`${a.created_at.split('T')[0]}T${a.time}:00`);
+          const timeB = new Date(`${b.created_at.split('T')[0]}T${b.time}:00`);
+          return timeB - timeA;
         });
-        
-        const stats = {
-          totalVolume: dayRecords.reduce((s, r) => s + (Number(r.amount) || 0), 0),
-          pumpCount: dayRecords.length,
-          records: dayRecords
-        };
-        
-        pumpStatsCache.set(dateKey, stats);
-      }
-      
-      return pumpStatsCache.get(dateKey);
-    }
-    
-    // New: Update Pump Chart
-    function updatePumpingChartForSelectedDate() {
-      // Use the same 7 days logic from the current date
-      const days = lastNDates(7, currentDate); 
-      const labels = days.map(d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-      const dailyTotals = days.map(day => {
-        const stats = getCachedDailyPumpStats(day);
-        return stats.totalVolume;
-      });
 
-      if (pumpingChart) {
-        pumpingChart.data.labels = labels;
-        pumpingChart.data.datasets[0].data = dailyTotals;
-        pumpingChart.update();
-      }
-    }
+        const dailyList = document.getElementById('pump-daily-list');
+        const noDailyRecords = document.getElementById('no-pump-daily-records');
 
-    function updatePumpDailyView() {
-  const dailyStats = getCachedDailyPumpStats(currentDate);
-  const dailyRecords = dailyStats.records.sort((a, b) => {
-    // Sort by time, falling back to created_at
-    const timeA = new Date(`${a.created_at.split('T')[0]}T${a.time}:00`);
-    const timeB = new Date(`${b.created_at.split('T')[0]}T${b.time}:00`);
-    return timeB - timeA;
-  });
-
-  const dailyList = document.getElementById('pump-daily-list');
-  const noDailyRecords = document.getElementById('no-pump-daily-records');
-
-  if (dailyRecords.length === 0) {
-    dailyList.innerHTML = '';
-    noDailyRecords.classList.remove('hidden');
-  } else {
-    noDailyRecords.classList.add('hidden');
-    dailyList.innerHTML = dailyRecords.map(record => {
-      const time = record.time || new Date(record.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-      const amount = record.amount || 0;
-      
-      return `
-        <div class="timeline-item feed-type-breast">
-          <div class="timeline-dot bg-[#10b981]"></div>
-          <div class="flex justify-between items-center w-full">
-            <div class="flex items-center gap-3">
-              <div>
-                <p class="font-medium text-[#0D4C91] flex items-center gap-1">
-                  <span>🤱</span>
-                  ${time}
-                </p>
-                <p class="text-sm text-gray-500">Pumped Milk</p>
+        if (dailyRecords.length === 0) {
+          dailyList.innerHTML = '';
+          noDailyRecords.classList.remove('hidden');
+        } else {
+          noDailyRecords.classList.add('hidden');
+          dailyList.innerHTML = dailyRecords.map(record => {
+            const time = record.time || new Date(record.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            const amount = record.amount || 0;
+            
+            return `
+              <div class="timeline-item feed-type-breast">
+                <div class="timeline-dot bg-[#10b981]"></div>
+                <div class="flex justify-between items-center w-full">
+                  <div class="flex items-center gap-3">
+                    <div>
+                      <p class="font-medium text-[#0D4C91] flex items-center gap-1">
+                        <span>🤱</span>
+                        ${time}
+                      </p>
+                      <p class="text-sm text-gray-500">Pumped Milk</p>
+                    </div>
+                  </div>
+                  <div class="text-right flex items-center gap-3">
+                    <p class="font-semibold text-[#0D4C91]">${amount} ml</p>
+                    
+                    <div class="flex space-x-2">
+                      <button onclick="pumpHandlers.edit('${record.id}')" 
+                              class="text-gray-500 hover:text-blue-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                              aria-label="Edit record">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                      </button>
+                      <button onclick="pumpHandlers.delete('${record.id}')" 
+                              class="text-gray-500 hover:text-red-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                              aria-label="Delete record">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div class="text-right flex items-center gap-3">
-              <p class="font-semibold text-[#0D4C91]">${amount} ml</p>
-              
-              <div class="flex space-x-2">
-                <button onclick="openEditPumpModal('${record.id}')" 
-                        class="text-gray-500 hover:text-blue-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
-                        aria-label="Edit record">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                  </svg>
-                </button>
-                <button onclick="deletePumpRecord('${record.id}')" 
-                        class="text-gray-500 hover:text-red-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
-                        aria-label="Delete record">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
-}
+            `;
+          }).join('');
+        }
+      },
 
-    function initCharts() {
-      const feedingCtx = document.getElementById('feedingChart');
-      if (feedingCtx) {
-        feedingChart = new Chart(feedingCtx.getContext('2d'), {
-          type: 'line',
-          data: { 
-            labels: [], 
-            datasets: [
-              { 
-                label: 'Formula (ml)', 
+      renderPoopList: () => {
+        const dailyStats = statsCache.getPoopStats(state.currentDate);
+        const dailyRecords = dailyStats.records.sort((a, b) => {
+          const timeA = new Date(`${a.created_at.split('T')[0]}T${a.time}:00`);
+          const timeB = new Date(`${b.created_at.split('T')[0]}T${b.time}:00`);
+          return timeB - timeA;
+        });
+
+        const dailyList = document.getElementById('poop-daily-list');
+        const noDailyRecords = document.getElementById('no-poop-daily-records');
+
+        if (dailyRecords.length === 0) {
+          dailyList.innerHTML = '';
+          noDailyRecords.classList.remove('hidden');
+        } else {
+          noDailyRecords.classList.add('hidden');
+          dailyList.innerHTML = dailyRecords.map(record => {
+            const time = record.time || new Date(record.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            
+            return `
+              <div class="timeline-item feed-type-poop">
+                <div class="timeline-dot bg-[#8b5cf6]"></div>
+                <div class="flex justify-between items-center w-full">
+                  <div class="flex items-center gap-3">
+                    <div>
+                      <p class="font-medium text-[#0D4C91] flex items-center gap-1">
+                        <span>💩</span>
+                        ${time}
+                      </p>
+                      <p class="text-sm text-gray-500">Diaper Change</p>
+                    </div>
+                  </div>
+                  <div class="text-right flex items-center gap-3">
+                    <div class="flex space-x-2">
+                      <button onclick="poopHandlers.edit('${record.id}')" 
+                              class="text-gray-500 hover:text-blue-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                              aria-label="Edit record">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                      </button>
+                      <button onclick="poopHandlers.delete('${record.id}')" 
+                              class="text-gray-500 hover:text-red-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                              aria-label="Delete record">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+    };
+
+    // ==================== CHART MANAGEMENT ====================
+    const chartManager = {
+      init: () => {
+        const feedingCtx = document.getElementById('feedingChart');
+        if (feedingCtx) {
+          state.charts.feeding = new Chart(feedingCtx.getContext('2d'), {
+            type: 'line',
+            data: { 
+              labels: [], 
+              datasets: [
+                { 
+                  label: 'Formula (ml)', 
+                  data: [], 
+                  fill: false, 
+                  tension: 0.4, 
+                  borderWidth: 3,
+                  borderColor: '#4E87C6',
+                  backgroundColor: '#4E87C6'
+                },
+                { 
+                  label: 'Breast (ml)', 
+                  data: [], 
+                  fill: false, 
+                  tension: 0.4, 
+                  borderWidth: 3,
+                  borderColor: '#10b981',
+                  backgroundColor: '#10b981'
+                }
+              ] 
+            },
+            options: { 
+              responsive: true, 
+              maintainAspectRatio: false, 
+              plugins: { 
+                legend: { display: true, position: 'top' } 
+              },
+              scales: {
+                y: { beginAtZero: true }
+              }
+            }
+          });
+        }
+
+        const weightCtx = document.getElementById('weightChart');
+        if (weightCtx) {
+          state.charts.weight = new Chart(weightCtx.getContext('2d'), {
+            type: 'line',
+            data: { 
+              labels: [], 
+              datasets: [{ 
+                label: 'Weight (kg)', 
                 data: [], 
-                fill: false, 
+                fill: true, 
                 tension: 0.4, 
                 borderWidth: 3,
                 borderColor: '#4E87C6',
-                backgroundColor: '#4E87C6'
-              },
-              { 
-                label: 'Breast (ml)', 
-                data: [], 
-                fill: false, 
-                tension: 0.4, 
-                borderWidth: 3,
-                borderColor: '#10b981',
-                backgroundColor: '#10b981'
+                backgroundColor: 'rgba(78, 135, 198, 0.1)'
+              }] 
+            },
+            options: { 
+              responsive: true, 
+              maintainAspectRatio: false, 
+              plugins: { legend: { display: false } },
+              scales: {
+                y: { beginAtZero: false }
               }
-            ] 
-          },
-          options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
-            plugins: { 
-              legend: { display: true, position: 'top' } 
-            },
-            scales: {
-              y: { beginAtZero: true }
             }
-          }
-        });
-      }
-
-      const weightCtx = document.getElementById('weightChart');
-      if (weightCtx) {
-        weightChart = new Chart(weightCtx.getContext('2d'), {
-          type: 'line',
-          data: { 
-            labels: [], 
-            datasets: [{ 
-              label: 'Weight (kg)', 
-              data: [], 
-              fill: true, 
-              tension: 0.4, 
-              borderWidth: 3,
-              borderColor: '#4E87C6',
-              backgroundColor: 'rgba(78, 135, 198, 0.1)'
-            }] 
-          },
-          options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
-            plugins: { legend: { display: false } },
-            scales: {
-              y: { beginAtZero: false }
-            }
-          }
-        });
-      }
-    }
-
-    const pumpingCtx = document.getElementById('pumpingChart');
-      if (pumpingCtx) {
-        pumpingChart = new Chart(pumpingCtx.getContext('2d'), {
-          type: 'bar', // Using bar for daily volume is often clearer
-          data: { 
-            labels: [], 
-            datasets: [{ 
-              label: 'Pumped Volume (ml)', 
-              data: [], 
-              backgroundColor: '#4E87C6',
-              borderColor: '#4E87C6',
-              borderWidth: 1
-            }] 
-          },
-          options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
-            plugins: { 
-              legend: { display: false } 
-            },
-            scales: {
-              y: { beginAtZero: true }
-            }
-          }
-        });
-      }
-
-    function lastNDates(n, endDate) {
-        const arr = [];
-        const end = new Date(endDate);
-        end.setHours(0,0,0,0);
-        for (let i = n - 1; i >= 0; i--) {
-            const d = new Date(end); 
-            d.setDate(d.getDate() - i); 
-            arr.push(new Date(d));
+          });
         }
-        return arr;
-    }
 
-    // Updated updateDailyView to sort by feed time and add edit/delete buttons
-    function updateDailyView() {
-      const dailyStats = getCachedDailyStats(currentDate);
-      const dailyRecords = dailyStats.records.sort((a, b) => {
-        // Create a comparable time string for sorting, including the date
-        const timeA = new Date(`${a.created_at.split('T')[0]}T${a.time}:00`);
-        const timeB = new Date(`${b.created_at.split('T')[0]}T${b.time}:00`);
-        return timeB - timeA;
-      });
+        const pumpingCtx = document.getElementById('pumpingChart');
+        if (pumpingCtx) {
+          state.charts.pumping = new Chart(pumpingCtx.getContext('2d'), {
+            type: 'bar',
+            data: { 
+              labels: [], 
+              datasets: [{ 
+                label: 'Pumped Volume (ml)', 
+                data: [], 
+                backgroundColor: '#4E87C6',
+                borderColor: '#4E87C6',
+                borderWidth: 1
+              }] 
+            },
+            options: { 
+              responsive: true, 
+              maintainAspectRatio: false, 
+              plugins: { 
+                legend: { display: false } 
+              },
+              scales: {
+                y: { beginAtZero: true }
+              }
+            }
+          });
+        }
+      },
 
-      const dailyList = document.getElementById('daily-list');
-      const noDailyRecords = document.getElementById('no-daily-records');
+      updateFeedingChart: () => {
+        const days = utils.lastNDates(7, state.currentDate);
+        const labels = days.map(d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        const formulaTotals = days.map(day => {
+          const stats = statsCache.getFeedStats(day);
+          return stats.records.filter(r => r.feed_type === 'formula').reduce((s, r) => s + (Number(r.amount) || 0), 0);
+        });
+        const breastTotals = days.map(day => {
+          const stats = statsCache.getFeedStats(day);
+          return stats.records.filter(r => r.feed_type === 'breast').reduce((s, r) => s + (Number(r.amount) || 0), 0);
+        });
 
-      if (dailyRecords.length === 0) {
-        dailyList.innerHTML = '';
-        noDailyRecords.classList.remove('hidden');
-      } else {
-        noDailyRecords.classList.add('hidden');
-        dailyList.innerHTML = dailyRecords.map(record => {
-          const time = record.time || (record.created_at ? new Date(record.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Unknown time');
-          const amount = record.amount || 0;
-          const duration = record.duration || 0;
-          const feedType = record.feed_type || 'formula';
-          const feedBy = record.feed_by || 'mama';
-          const feedIcon = feedType === 'breast' ? '🤱' : '🍼';
-          
-          return `
-            <div class="timeline-item feed-type-${feedType}">
-              <div class="timeline-dot"></div>
-              <div class="flex justify-between items-center w-full">
-                <div class="flex items-center gap-3">
-                  <div>
-                    <p class="font-medium text-[#0D4C91] flex items-center gap-1">
-                      <span>${feedIcon}</span>
-                      ${time}
-                    </p>
-                    <p class="text-sm text-gray-500">Feed by ${feedBy} • ${feedType}</p>
-                  </div>
-                </div>
-                <div class="text-right flex items-center gap-3">
-                  <p class="font-semibold text-[#0D4C91]">${amount} ml</p>
-                  <div class="timeline-actions">
-                    <button class="action-btn" onclick="editFeedingRecord('${record.id}')" aria-label="Edit record">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                    </button>
-                    <button class="action-btn" onclick="deleteFeedingRecord('${record.id}')" aria-label="Delete record">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash-2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          `;
-        }).join('');
+        if (state.charts.feeding) {
+          state.charts.feeding.data.labels = labels;
+          state.charts.feeding.data.datasets[0].data = formulaTotals;
+          state.charts.feeding.data.datasets[1].data = breastTotals;
+          state.charts.feeding.update();
+        }
+      },
+
+      updatePumpingChart: () => {
+        const days = utils.lastNDates(7, state.currentDate);
+        const labels = days.map(d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        const dailyTotals = days.map(day => {
+          const stats = statsCache.getPumpStats(day);
+          return stats.totalVolume;
+        });
+
+        if (state.charts.pumping) {
+          state.charts.pumping.data.labels = labels;
+          state.charts.pumping.data.datasets[0].data = dailyTotals;
+          state.charts.pumping.update();
+        }
+      },
+
+      updateWeightChart: () => {
+        if (state.charts.weight) {
+          state.charts.weight.data.labels = state.records.weights.map(r => 
+            new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          );
+          state.charts.weight.data.datasets[0].data = state.records.weights.map(r => Number(r.weight));
+          state.charts.weight.update();
+        }
       }
-    }
+    };
 
-    // New functions for editing and deleting
-    function editFeedingRecord(id) {
-      const record = records.find(r => r.id === id);
-      if (!record) return;
-      
-      const modal = document.getElementById('feeding-modal');
-      const form = document.getElementById('feeding-form');
-      
-      // Update form fields
-      document.getElementById('feeding-modal-title').textContent = 'Edit Feeding';
-      form.querySelector('#feeding-record-id').value = record.id;
-      form.querySelector('input[name="time"]').value = record.time;
-      form.querySelector('select[name="feedType"]').value = record.feed_type;
-      form.querySelector('select[name="feedBy"]').value = record.feed_by;
-      form.querySelector('input[name="amount"]').value = record.amount;
+    // ==================== TODAY'S STATS UPDATE ====================
+    const todayStatsUpdater = {
+      update: () => {
+        statsCache.clearAll();
+        
+        const today = new Date();
+        const todayStats = statsCache.getFeedStats(today);
+        const currentWeight = state.records.weights.length ? Number(state.records.weights[state.records.weights.length-1].weight) : 4.4;
+        const targetIntake = Math.round(currentWeight * 150);
+        const intakePercentage = Math.min(Math.round((todayStats.totalVolume / targetIntake) * 100), 100);
 
-      // Highlight the correct quick button if applicable
-      document.querySelectorAll('.quick-feed-btn').forEach(b => {
+        utils.safeText('total-volume-2', todayStats.totalVolume);
+        utils.safeText('feed-count-2', todayStats.feedCount);
+        utils.safeText('current-weight', currentWeight);
+        utils.safeText('target-intake', targetIntake);
+
+        const circ = document.querySelector('.circular-progress');
+        const progressBar = circ?.querySelector('[role="progressbar"]');
+        if (circ) {
+          circ.style.setProperty('--progress', `${intakePercentage}%`);
+          if (progressBar) {
+            progressBar.setAttribute('aria-valuenow', intakePercentage);
+          }
+        }
+        const pv = document.querySelector('.progress-value'); 
+        if (pv) pv.textContent = `${intakePercentage}%`;
+
+        const feedDotsContainer = document.getElementById('feed-dots');
+        if (feedDotsContainer) {
+          feedDotsContainer.innerHTML = '';
+          const recentRecords = todayStats.records;
+          
+          recentRecords.forEach(record => {
+            const dot = document.createElement('div');
+            const feedType = record.feed_type || 'formula';
+            dot.className = `w-3 h-3 rounded-full ${feedType === 'breast' ? 'bg-[#10b981]' : 'bg-[#4E87C6]'}`;
+            feedDotsContainer.appendChild(dot);
+          });
+          
+          if (todayStats.feedCount === 0) {
+            const emptyDot = document.createElement('div');
+            emptyDot.className = 'w-3 h-3 rounded-full bg-gray-300';
+            feedDotsContainer.appendChild(emptyDot);
+          }
+        }
+
+        chartManager.updateWeightChart();
+      }
+    };
+
+    // ==================== FEED HANDLERS ====================
+    const feedHandlers = {
+      edit: (id) => {
+        const record = state.records.feeds.find(r => r.id === id);
+        if (!record) return;
+        
+        const modal = document.getElementById('feeding-modal');
+        const form = document.getElementById('feeding-form');
+        
+        document.getElementById('feeding-modal-title').textContent = 'Edit Feeding';
+        form.querySelector('#feeding-record-id').value = record.id;
+        form.querySelector('input[name="time"]').value = record.time;
+        form.querySelector('select[name="feedType"]').value = record.feed_type;
+        form.querySelector('select[name="feedBy"]').value = record.feed_by;
+        form.querySelector('input[name="amount"]').value = record.amount;
+
+        document.querySelectorAll('.quick-feed-btn').forEach(b => {
           b.classList.remove('active');
           if (b.dataset.amount == record.amount) {
-              b.classList.add('active');
+            b.classList.add('active');
           }
-      });
-      
-      // Show modal
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-      setTimeout(() => {
-        modal.querySelector('.modal-content')?.classList.remove('scale-95', 'opacity-0');
-      }, 10);
-    }
-    
-    async function deleteFeedingRecord(id) {
+        });
+        
+        utils.openModal('feeding-modal');
+      },
+
+      delete: async (id) => {
         if (!confirm('Are you sure you want to delete this record?')) return;
         
         try {
-            const { error } = await supabaseClient.from('feed_records').delete().eq('id', id);
-            
-            if (error) {
-                console.error('Delete error:', error);
-                alert('Failed to delete feeding record');
-            } else {
-                // Remove the record from the local state
-                records = records.filter(r => r.id !== id);
-                dailyStatsCache.clear(); // Clear cache to re-calculate stats
-                
-                updateDailyView();
-                updateFeedingChartForSelectedDate();
-                updateTodayStatsAndWeightChart();
-                updateLastFeedCounter();
-                showSuccessMessage('Feeding record deleted!');
-            }
+          await recordManager.delete('feed_records', id);
+          state.records.feeds = state.records.feeds.filter(r => r.id !== id);
+          
+          uiRenderers.renderFeedList();
+          chartManager.updateFeedingChart();
+          todayStatsUpdater.update();
+          counterUpdates.updateLastFeed();
+          utils.showSuccessMessage('Feeding record deleted!');
         } catch (err) {
-            console.error('Deletion error:', err);
-            alert('Failed to delete feeding record');
+          console.error('Deletion error:', err);
+          alert('Failed to delete feeding record');
         }
-    }
+      },
 
-    async function deletePumpRecord(id) {
-  if (!confirm('Are you sure you want to delete this pump record?')) {
-    return;
-  }
-  
-  try {
-    const { error } = await supabaseClient
-      .from('pump_records')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error('Delete pump error:', error);
-      alert('Failed to delete pump record.');
-    } else {
-      // Remove from local array
-      pumpRecords = pumpRecords.filter(r => r.id !== id);
-      
-      // Clear cache and refresh UI
-      dailyStatsCache.set('pump', new Map());
-      updateLastPumpCounter();
-      updatePumpingChartForSelectedDate();
-      updatePumpDailyView();
-      showSuccessMessage('Pump record deleted!');
-    }
-  } catch (err) {
-    console.error('Deletion error:', err);
-    alert('Failed to delete pump record.');
-  }
-}
-
-    function updateFeedingChartForSelectedDate() {
-      const days = lastNDates(7, currentDate);
-      const labels = days.map(d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-      const formulaTotals = days.map(day => {
-        const stats = getCachedDailyStats(day);
-        return stats.records.filter(r => r.feed_type === 'formula').reduce((s, r) => s + (Number(r.amount) || 0), 0);
-      });
-      const breastTotals = days.map(day => {
-        const stats = getCachedDailyStats(day);
-        return stats.records.filter(r => r.feed_type === 'breast').reduce((s, r) => s + (Number(r.amount) || 0), 0);
-      });
-
-      if (feedingChart) {
-        feedingChart.data.labels = labels;
-        feedingChart.data.datasets[0].data = formulaTotals;
-        feedingChart.data.datasets[1].data = breastTotals;
-        feedingChart.update();
-      }
-    }
-
-    function updateTodayStatsAndWeightChart() {
-      // Clear cache to ensure fresh calculations
-      dailyStatsCache.clear();
-      
-      const today = new Date();
-      const todayStats = getCachedDailyStats(today);
-      const currentWeight = weightRecords.length ? Number(weightRecords[weightRecords.length-1].weight) : 4.4;
-      const targetIntake = Math.round(currentWeight * 150);
-      const intakePercentage = Math.min(Math.round((todayStats.totalVolume / targetIntake) * 100), 100);
-
-      safeText('total-volume-2', todayStats.totalVolume);
-      safeText('feed-count-2', todayStats.feedCount);
-      safeText('current-weight', currentWeight);
-      safeText('target-intake', targetIntake);
-
-      const circ = document.querySelector('.circular-progress');
-      const progressBar = circ?.querySelector('[role="progressbar"]');
-      if (circ) {
-        circ.style.setProperty('--progress', `${intakePercentage}%`);
-        if (progressBar) {
-          progressBar.setAttribute('aria-valuenow', intakePercentage);
-        }
-      }
-      const pv = document.querySelector('.progress-value'); 
-      if (pv) pv.textContent = `${intakePercentage}%`;
-
-      // Enhanced feed dots with type indicators
-      const feedDotsContainer = document.getElementById('feed-dots');
-      if (feedDotsContainer) {
-        feedDotsContainer.innerHTML = '';
-        const recentRecords = todayStats.records;
+      submit: async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
         
-        recentRecords.forEach(record => {
-          const dot = document.createElement('div');
-          const feedType = record.feed_type || 'formula';
-          dot.className = `w-3 h-3 rounded-full ${feedType === 'breast' ? 'bg-[#10b981]' : 'bg-[#4E87C6]'}`;
-          feedDotsContainer.appendChild(dot);
-        });
+        utils.setLoading(submitBtn, true);
         
-        if (todayStats.feedCount === 0) {
-          const emptyDot = document.createElement('div');
-          emptyDot.className = 'w-3 h-3 rounded-full bg-gray-300';
-          feedDotsContainer.appendChild(emptyDot);
+        try {
+          const fd = new FormData(form);
+          const recordId = fd.get('id');
+          const newRec = {
+            time: fd.get('time'),
+            amount: Number(fd.get('amount')),
+            feed_by: fd.get('feedBy'),
+            feed_type: fd.get('feedType')
+          };
+
+          let data;
+          if (recordId) {
+            data = await recordManager.update('feed_records', recordId, newRec);
+            const index = state.records.feeds.findIndex(r => r.id === recordId);
+            if (index !== -1) {
+              state.records.feeds[index] = { ...state.records.feeds[index], ...newRec };
+            }
+          } else {
+            data = await recordManager.create('feed_records', newRec);
+            state.records.feeds.push(...data);
+          }
+          
+          uiRenderers.renderFeedList();
+          chartManager.updateFeedingChart();
+          todayStatsUpdater.update();
+          counterUpdates.updateLastFeed();
+          utils.showSuccessMessage('Feeding record saved successfully!');
+          utils.closeModal('feeding-modal');
+          form.reset();
+          
+          document.querySelectorAll('.quick-feed-btn').forEach(b => b.classList.remove('active'));
+        } catch (err) {
+          console.error('Submission error:', err);
+          alert('Failed to save feeding record');
+        } finally {
+          utils.setLoading(submitBtn, false);
         }
       }
+    };
 
-      // Weight chart (always visible)
-      if (weightChart) {
-        weightChart.data.labels = weightRecords.map(r => new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-        weightChart.data.datasets[0].data = weightRecords.map(r => Number(r.weight));
-        weightChart.update();
+    // ==================== PUMP HANDLERS ====================
+    const pumpHandlers = {
+      edit: (id) => {
+        const record = state.records.pumps.find(r => r.id === id);
+        if (!record) {
+          alert('Record not found.');
+          return;
+        }
+        
+        const modal = document.getElementById('edit-pump-modal');
+        if (!modal) return;
+        
+        modal.querySelector('input[name="edit_id"]').value = record.id;
+        const recordDate = record.date || record.created_at.slice(0, 10);
+        modal.querySelector('input[name="edit_date"]').value = recordDate;
+        modal.querySelector('input[name="edit_time"]').value = record.time;
+        modal.querySelector('input[name="edit_amount"]').value = record.amount;
+        
+        utils.openModal('edit-pump-modal');
+      },
+
+      delete: async (id) => {
+        if (!confirm('Are you sure you want to delete this pump record?')) return;
+        
+        try {
+          await recordManager.delete('pump_records', id);
+          state.records.pumps = state.records.pumps.filter(r => r.id !== id);
+          
+          state.cache.pumpStats.clear();
+          counterUpdates.updateLastPump();
+          chartManager.updatePumpingChart();
+          uiRenderers.renderPumpList();
+          utils.showSuccessMessage('Pump record deleted!');
+        } catch (err) {
+          console.error('Deletion error:', err);
+          alert('Failed to delete pump record.');
+        }
+      },
+
+      submit: async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        
+        utils.setLoading(submitBtn, true);
+        
+        try {
+          const fd = new FormData(form);
+          const newRec = {
+            date: fd.get('date'),
+            time: fd.get('time'), 
+            amount: Number(fd.get('amount'))
+          };
+          
+          const data = await recordManager.create('pump_records', newRec);
+          state.records.pumps.push(...data);
+          state.records.pumps.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+          
+          state.cache.pumpStats.clear();
+          counterUpdates.updateLastPump(); 
+          chartManager.updatePumpingChart(); 
+          uiRenderers.renderPumpList(); 
+          
+          utils.showSuccessMessage('Pump record saved successfully!');
+          utils.closeModal('pump-modal');
+          form.reset();
+        } catch (err) {
+          console.error('Submission error:', err);
+          alert('Failed to save pump record');
+        } finally {
+          utils.setLoading(submitBtn, false);
+        }
+      },
+
+      submitEdit: async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        
+        utils.setLoading(submitBtn, true);
+        
+        try {
+          const fd = new FormData(form);
+          const id = fd.get('edit_id');
+
+          const updatedRec = {
+            date: fd.get('edit_date'),
+            time: fd.get('edit_time'), 
+            amount: Number(fd.get('edit_amount'))
+          };
+
+          const data = await recordManager.update('pump_records', id, updatedRec);
+          const index = state.records.pumps.findIndex(r => r.id === id);
+          if (index !== -1) {
+            state.records.pumps[index] = { ...state.records.pumps[index], ...data[0] }; 
+          }
+          
+          state.cache.pumpStats.clear();
+          counterUpdates.updateLastPump();
+          chartManager.updatePumpingChart();
+          uiRenderers.renderPumpList();
+          
+          utils.showSuccessMessage('Pump record updated successfully!');
+          utils.closeModal('edit-pump-modal');
+        } catch (err) {
+          console.error('Update submission error:', err);
+          alert('Failed to update pump record.');
+        } finally {
+          utils.setLoading(submitBtn, false);
+        }
       }
-    }
+    };
 
+    // ==================== POOP HANDLERS ====================
+    const poopHandlers = {
+      edit: (id) => {
+        const record = state.records.poops.find(r => r.id === id);
+        if (!record) {
+          alert('Record not found.');
+          return;
+        }
+        
+        const modal = document.getElementById('edit-poop-modal');
+        if (!modal) return;
+        
+        modal.querySelector('input[name="edit_id"]').value = record.id;
+        const recordDate = record.date || record.created_at.slice(0, 10);
+        modal.querySelector('input[name="edit_date"]').value = recordDate;
+        modal.querySelector('input[name="edit_time"]').value = record.time;
+        
+        utils.openModal('edit-poop-modal');
+      },
+
+      delete: async (id) => {
+        if (!confirm('Are you sure you want to delete this poop record?')) return;
+        
+        try {
+          await recordManager.delete('diaper_records', id);
+          state.records.poops = state.records.poops.filter(r => r.id !== id);
+          
+          state.cache.poopStats.clear();
+          counterUpdates.updateLastPoop();
+          uiRenderers.renderPoopList();
+          utils.showSuccessMessage('Poop record deleted!');
+        } catch (err) {
+          console.error('Deletion error:', err);
+          alert('Failed to delete poop record.');
+        }
+      },
+
+      submit: async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        
+        utils.setLoading(submitBtn, true);
+        
+        try {
+          const fd = new FormData(form);
+          const newRec = {
+            date: fd.get('date'),
+            time: fd.get('time')
+          };
+          
+          const data = await recordManager.create('diaper_records', newRec);
+          state.records.poops.push(...data);
+          state.records.poops.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+          
+          state.cache.poopStats.clear();
+          counterUpdates.updateLastPoop(); 
+          uiRenderers.renderPoopList(); 
+          
+          utils.showSuccessMessage('Poop record saved successfully!');
+          utils.closeModal('poop-modal');
+          form.reset();
+        } catch (err) {
+          console.error('Submission error:', err);
+          alert('Failed to save poop record');
+        } finally {
+          utils.setLoading(submitBtn, false);
+        }
+      },
+
+      submitEdit: async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        
+        utils.setLoading(submitBtn, true);
+        
+        try {
+          const fd = new FormData(form);
+          const id = fd.get('edit_id');
+
+          const updatedRec = {
+            date: fd.get('edit_date'),
+            time: fd.get('edit_time')
+          };
+
+          const data = await recordManager.update('diaper_records', id, updatedRec);
+          const index = state.records.poops.findIndex(r => r.id === id);
+          if (index !== -1) {
+            state.records.poops[index] = { ...state.records.poops[index], ...data[0] }; 
+          }
+          
+          state.cache.poopStats.clear();
+          counterUpdates.updateLastPoop();
+          uiRenderers.renderPoopList();
+          
+          utils.showSuccessMessage('Poop record updated successfully!');
+          utils.closeModal('edit-poop-modal');
+        } catch (err) {
+          console.error('Update submission error:', err);
+          alert('Failed to update poop record.');
+        } finally {
+          utils.setLoading(submitBtn, false);
+        }
+      }
+    };
+
+    // ==================== WEIGHT HANDLERS ====================
+    const weightHandlers = {
+      submit: async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        
+        utils.setLoading(submitBtn, true);
+        
+        try {
+          const fd = new FormData(form);
+          const newRec = {
+            date: fd.get('date'),
+            weight: Number(fd.get('weight'))
+          };
+
+          const data = await recordManager.create('weight_records', newRec);
+          
+          if (!data || data.length === 0) {
+            state.records.weights.push(newRec);
+          } else {
+            state.records.weights.push(...data);
+          }
+          
+          state.records.weights.sort((a, b) => new Date(a.date) - new Date(b.date));
+          todayStatsUpdater.update();
+          utils.showSuccessMessage('Weight record saved successfully!');
+          utils.closeModal('weight-modal');
+          form.reset();
+        } catch (err) {
+          console.error('Submission error:', err);
+          alert('Failed to save weight record');
+        } finally {
+          utils.setLoading(submitBtn, false);
+        }
+      }
+    };
+
+    // ==================== DATA FETCHING ====================
     async function fetchInitialData() {
       try {
-        const { data: feeds, error: feedsError } = await supabaseClient
-          .from('feed_records')
-          .select('*')
-          .order('created_at', { ascending: true });
-        if (feedsError) throw feedsError;
-        records = feeds || [];
+        state.records.feeds = await recordManager.fetch('feed_records');
+        state.records.weights = await recordManager.fetch('weight_records');
+        state.records.pumps = await recordManager.fetch('pump_records');
+        state.records.poops = await recordManager.fetch('diaper_records');
 
-        const { data: weights, error: weightsError } = await supabaseClient
-          .from('weight_records')
-          .select('*')
-          .order('date', { ascending: true });
-        if (weightsError) throw weightsError;
-        weightRecords = weights || [];
-
-        const { data: pumps, error: pumpsError } = await supabaseClient
-          .from('pump_records') // <--- Corrected Table Name
-          .select('*')
-          .order('created_at', { ascending: true });
-        if (pumpsError) throw pumpsError;
-        pumpRecords = pumps || [];
-
-        updateDailyView();
-        updateFeedingChartForSelectedDate();
-        updateTodayStatsAndWeightChart();
-        updateLastFeedCounter();
-        updateLastPumpCounter();
-        updatePumpingChartForSelectedDate(); // New
-        updatePumpDailyView(); // New
+        uiRenderers.renderFeedList();
+        uiRenderers.renderPumpList();
+        uiRenderers.renderPoopList();
+        chartManager.updateFeedingChart();
+        chartManager.updatePumpingChart();
+        todayStatsUpdater.update();
+        counterUpdates.updateLastFeed();
+        counterUpdates.updateLastPump();
+        counterUpdates.updateLastPoop();
       } catch (err) {
         console.error('Error fetching data:', err);
         alert('Could not load data from Supabase. Check console for details and ensure your anon key / table policies are correct.');
       }
     }
 
-    // Enhanced UI setup with improved interactions
+    // ==================== UI SETUP ====================
     function setupUi() {
       const dateSelector = document.getElementById('date-selector');
       if (dateSelector) {
-          dateSelector.valueAsDate = currentDate;
-          dateSelector.addEventListener('change', (e) => {
-              currentDate = new Date(e.target.value);
-              updateDailyView();
-              updateFeedingChartForSelectedDate();
-          });
+        dateSelector.valueAsDate = state.currentDate;
+        dateSelector.addEventListener('change', (e) => {
+          state.currentDate = new Date(e.target.value);
+          uiRenderers.renderFeedList();
+          chartManager.updateFeedingChart();
+        });
       }
       
-      // Toggle button functionality for History vs Chart
+      // Toggle buttons for feed history/chart
       const historyBtn = document.getElementById('toggle-history');
       const chartBtn = document.getElementById('toggle-chart');
       const dailyView = document.getElementById('daily-view');
@@ -1283,159 +1662,8 @@ async function handleEditPumpForm(e) {
         chartContainer.classList.remove('hidden');
       });
 
-      // Quick amount buttons
-      document.querySelectorAll('.quick-feed-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          // Remove active class from all buttons
-          document.querySelectorAll('.quick-feed-btn').forEach(b => b.classList.remove('active'));
-          // Add active class to clicked button
-          btn.classList.add('active');
-          // Set the amount in the input
-          const amountInput = document.querySelector('input[name="amount"]');
-          if (amountInput) {
-            amountInput.value = btn.dataset.amount;
-          }
-        });
-      });
-
-      // Modal controls with enhanced animations
-      document.getElementById('add-feeding-btn')?.addEventListener('click', () => {
-        const modal = document.getElementById('feeding-modal');
-        if (!modal) return;
-        
-        // Reset form and title for new record
-        const form = modal.querySelector('form');
-        form.reset();
-        document.getElementById('feeding-modal-title').textContent = 'New Feeding';
-        document.getElementById('feeding-record-id').value = '';
-        document.querySelectorAll('.quick-feed-btn').forEach(b => b.classList.remove('active'));
-        
-        // Set current time as default
-        const timeInput = modal.querySelector('input[name="time"]');
-        const now = new Date();
-        if (timeInput) {
-          timeInput.value = now.toTimeString().slice(0, 5);
-        }
-        
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        setTimeout(() => {
-          modal.querySelector('.modal-content')?.classList.remove('scale-95', 'opacity-0');
-        }, 10);
-      });
-
-      document.getElementById('close-feeding-modal')?.addEventListener('click', () => {
-        closeModal('feeding-modal');
-      });
-
-      document.getElementById('add-weight-btn')?.addEventListener('click', () => {
-        const modal = document.getElementById('weight-modal');
-        if (!modal) return;
-        
-        // Set today's date as default
-        const dateInput = modal.querySelector('input[name="date"]');
-        if (dateInput) {
-          dateInput.value = new Date().toISOString().slice(0, 10);
-        }
-        
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        setTimeout(() => {
-          modal.querySelector('.modal-content')?.classList.remove('scale-95', 'opacity-0');
-        }, 10);
-      });
-
-      document.getElementById('close-weight-modal')?.addEventListener('click', () => {
-        closeModal('weight-modal');
-      });
-
-      // Close modals when clicking backdrop
-      document.querySelectorAll('.modal-backdrop').forEach(modal => {
-        modal.addEventListener('click', (e) => {
-          if (e.target === modal) {
-            closeModal(modal.id);
-          }
-        });
-      });
-
-      // NEW: Edit Pump Form Submission
-document.getElementById('edit-pump-form')?.addEventListener('submit', handleEditPumpForm);
-
-// NEW: Close handler for edit modal
-document.getElementById('close-edit-pump-modal')?.addEventListener('click', () => {
-    closeModal('edit-pump-modal');
-});
-
-      // NEW: Pump Modal Controls (Using the card div: pump-card-opener)
-      document.getElementById('pump-card-opener')?.addEventListener('click', () => { 
-        const modal = document.getElementById('pump-modal');
-        if (!modal) return;
-        
-        // Set today's date and time as default
-        const now = new Date();
-        const dateInput = modal.querySelector('input[name="date"]');
-        const timeInput = modal.querySelector('input[name="time"]');
-        if (dateInput) dateInput.value = now.toISOString().slice(0, 10);
-        if (timeInput) timeInput.value = now.toTimeString().slice(0, 5);
-      
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        setTimeout(() => {
-          modal.querySelector('.modal-content')?.classList.remove('scale-95', 'opacity-0');
-        }, 10);
-      });
-      
-      document.getElementById('close-pump-modal')?.addEventListener('click', () => {
-        closeModal('pump-modal');
-      });
-      
-      // NEW: Pump Form Submission (Corrected fields and UI refresh)
-      document.getElementById('pump-form')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const form = e.target;
-        const submitBtn = form.querySelector('button[type="submit"]');
-        
-        setLoading(submitBtn, true);
-        
-        try {
-          const fd = new FormData(form);
-          const newRec = {
-            date: fd.get('date'), // Correctly sending date
-            time: fd.get('time'), 
-            amount: Number(fd.get('amount')) // Correctly sending amount
-          };
-          
-          const { data, error } = await supabaseClient.from('pump_records').insert([newRec]).select();
-          
-          if (error) {
-            console.error('Insert pump error:', error);
-            // Alert user about possible policy issue since data fields are now correct
-            alert('Failed to save pump record. Please check your Supabase RLS policies.'); 
-          } else {
-            pumpRecords.push(...data);
-            pumpRecords.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-            
-            dailyStatsCache.set('pump', new Map()); // Clear pump stats cache
-            
-            updateLastPumpCounter(); 
-            updatePumpingChartForSelectedDate(); 
-            updatePumpDailyView(); 
-            
-            showSuccessMessage('Pump record saved successfully!');
-            closeModal('pump-modal');
-            form.reset();
-          }
-        } catch (err) {
-          console.error('Submission error:', err);
-          alert('Failed to save pump record');
-        } finally {
-          setLoading(submitBtn, false);
-        }
-      });
-
-    // New: Toggle button functionality for Pump History vs Chart
-    const pumpHistoryBtn = document.getElementById('toggle-pump-history');
+      // Toggle buttons for pump history/chart
+      const pumpHistoryBtn = document.getElementById('toggle-pump-history');
       const pumpChartBtn = document.getElementById('toggle-pump-chart');
       const pumpDailyView = document.getElementById('pump-daily-view');
       const pumpingChartContainer = document.getElementById('pumping-chart-container');
@@ -1445,7 +1673,7 @@ document.getElementById('close-edit-pump-modal')?.addEventListener('click', () =
         pumpChartBtn.classList.remove('active');
         pumpDailyView.classList.remove('hidden');
         pumpingChartContainer.classList.add('hidden');
-        updatePumpDailyView(); 
+        uiRenderers.renderPumpList(); 
       });
       
       pumpChartBtn?.addEventListener('click', () => {
@@ -1453,192 +1681,159 @@ document.getElementById('close-edit-pump-modal')?.addEventListener('click', () =
         pumpHistoryBtn.classList.remove('active');
         pumpDailyView.classList.add('hidden');
         pumpingChartContainer.classList.remove('hidden');
-        updatePumpingChartForSelectedDate();
+        chartManager.updatePumpingChart();
       });
 
-      // Enhanced form submissions with loading states
-      document.getElementById('feeding-form')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const form = e.target;
-        const submitBtn = form.querySelector('button[type="submit"]');
-        
-        setLoading(submitBtn, true);
-        
-        try {
-          const fd = new FormData(form);
-          const recordId = fd.get('id');
-          const newRec = {
-            time: fd.get('time'),
-            amount: Number(fd.get('amount')),
-            feed_by: fd.get('feedBy'),
-            feed_type: fd.get('feedType')
-          };
-
-          let data, error;
-
-          if (recordId) {
-            // Update an existing record
-            ({ data, error } = await supabaseClient.from('feed_records').update(newRec).eq('id', recordId).select());
-          } else {
-            // Insert a new record
-            ({ data, error } = await supabaseClient.from('feed_records').insert([newRec]).select());
+      // Quick amount buttons
+      document.querySelectorAll('.quick-feed-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          document.querySelectorAll('.quick-feed-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const amountInput = document.querySelector('input[name="amount"]');
+          if (amountInput) {
+            amountInput.value = btn.dataset.amount;
           }
-          
-          if (error) {
-            console.error('Submission error:', error);
-            alert('Failed to save feeding record');
-          } else {
-            // Update local records array
-            if (recordId) {
-                const index = records.findIndex(r => r.id === recordId);
-                if (index !== -1) {
-                    records[index] = { ...records[index], ...newRec };
-                }
-            } else {
-                records.push(...data);
-            }
-            
-            dailyStatsCache.clear(); // Clear cache to re-calculate stats
-            updateDailyView();
-            updateFeedingChartForSelectedDate();
-            updateTodayStatsAndWeightChart();
-            updateLastFeedCounter();
-            showSuccessMessage('Feeding record saved successfully!');
-            closeModal('feeding-modal');
-            form.reset();
-            
-            // Clear quick button selection
-            document.querySelectorAll('.quick-feed-btn').forEach(b => b.classList.remove('active'));
-          }
-        } catch (err) {
-          console.error('Submission error:', err);
-          alert('Failed to save feeding record');
-        } finally {
-          setLoading(submitBtn, false);
+        });
+      });
+
+      // Modal controls
+      document.getElementById('add-feeding-btn')?.addEventListener('click', () => {
+        const modal = document.getElementById('feeding-modal');
+        if (!modal) return;
+        
+        const form = modal.querySelector('form');
+        form.reset();
+        document.getElementById('feeding-modal-title').textContent = 'New Feeding';
+        document.getElementById('feeding-record-id').value = '';
+        document.querySelectorAll('.quick-feed-btn').forEach(b => b.classList.remove('active'));
+        
+        const timeInput = modal.querySelector('input[name="time"]');
+        const now = new Date();
+        if (timeInput) {
+          timeInput.value = now.toTimeString().slice(0, 5);
         }
+        
+        utils.openModal('feeding-modal');
       });
 
-      document.getElementById('weight-form')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const form = e.target;
-        const submitBtn = form.querySelector('button[type="submit"]');
+      document.getElementById('add-weight-btn')?.addEventListener('click', () => {
+        const modal = document.getElementById('weight-modal');
+        if (!modal) return;
         
-        setLoading(submitBtn, true);
-        
-        try {
-          const fd = new FormData(form);
-          const newRec = {
-            date: fd.get('date'),
-            weight: Number(fd.get('weight'))
-          };
-
-          const { data, error } = await supabaseClient.from('weight_records').insert([newRec]);
-          
-          if (error) {
-            console.error('Insert weight error:', error);
-            alert('Failed to save weight record');
-          } else {
-            // Add the new record to local array
-            if (!data || data.length === 0) {
-              weightRecords.push(newRec);
-            } else {
-              weightRecords.push(...data);
-            }
-            
-            // Sort weight records by date
-            weightRecords.sort((a, b) => new Date(a.date) - new Date(b.date));
-            updateTodayStatsAndWeightChart();
-            showSuccessMessage('Weight record saved successfully!');
-            closeModal('weight-modal');
-            form.reset();
-          }
-        } catch (err) {
-          console.error('Submission error:', err);
-          alert('Failed to save weight record');
-        } finally {
-          setLoading(submitBtn, false);
+        const dateInput = modal.querySelector('input[name="date"]');
+        if (dateInput) {
+          dateInput.value = new Date().toISOString().slice(0, 10);
         }
+        
+        utils.openModal('weight-modal');
       });
 
-      // Keyboard navigation improvements
+      document.getElementById('pump-card-opener')?.addEventListener('click', () => { 
+        const modal = document.getElementById('pump-modal');
+        if (!modal) return;
+        
+        const now = new Date();
+        const dateInput = modal.querySelector('input[name="date"]');
+        const timeInput = modal.querySelector('input[name="time"]');
+        if (dateInput) dateInput.value = now.toISOString().slice(0, 10);
+        if (timeInput) timeInput.value = now.toTimeString().slice(0, 5);
+      
+        utils.openModal('pump-modal');
+      });
+
+      document.getElementById('poop-card-opener')?.addEventListener('click', () => { 
+        const modal = document.getElementById('poop-modal');
+        if (!modal) return;
+        
+        const now = new Date();
+        const dateInput = modal.querySelector('input[name="date"]');
+        const timeInput = modal.querySelector('input[name="time"]');
+        if (dateInput) dateInput.value = now.toISOString().slice(0, 10);
+        if (timeInput) timeInput.value = now.toTimeString().slice(0, 5);
+      
+        utils.openModal('poop-modal');
+      });
+
+      // Close modal buttons
+      document.getElementById('close-feeding-modal')?.addEventListener('click', () => utils.closeModal('feeding-modal'));
+      document.getElementById('close-weight-modal')?.addEventListener('click', () => utils.closeModal('weight-modal'));
+      document.getElementById('close-pump-modal')?.addEventListener('click', () => utils.closeModal('pump-modal'));
+      document.getElementById('close-edit-pump-modal')?.addEventListener('click', () => utils.closeModal('edit-pump-modal'));
+      document.getElementById('close-poop-modal')?.addEventListener('click', () => utils.closeModal('poop-modal'));
+      document.getElementById('close-edit-poop-modal')?.addEventListener('click', () => utils.closeModal('edit-poop-modal'));
+
+      // Close modals when clicking backdrop
+      document.querySelectorAll('.modal-backdrop').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            utils.closeModal(modal.id);
+          }
+        });
+      });
+
+      // Form submissions
+      document.getElementById('feeding-form')?.addEventListener('submit', feedHandlers.submit);
+      document.getElementById('weight-form')?.addEventListener('submit', weightHandlers.submit);
+      document.getElementById('pump-form')?.addEventListener('submit', pumpHandlers.submit);
+      document.getElementById('edit-pump-form')?.addEventListener('submit', pumpHandlers.submitEdit);
+      document.getElementById('poop-form')?.addEventListener('submit', poopHandlers.submit);
+      document.getElementById('edit-poop-form')?.addEventListener('submit', poopHandlers.submitEdit);
+
+      // Keyboard navigation
       document.addEventListener('keydown', (e) => {
-        // Close modals with Escape key
         if (e.key === 'Escape') {
           const openModal = document.querySelector('.modal-backdrop:not(.hidden)');
           if (openModal) {
-            closeModal(openModal.id);
+            utils.closeModal(openModal.id);
           }
         }
       });
     }
 
-    function closeModal(modalId) {
-      const modal = document.getElementById(modalId);
-      if (!modal) return;
-      
-      const content = modal.querySelector('.modal-content');
-      if (content) {
-        content.classList.add('scale-95', 'opacity-0');
-      }
-      
-      setTimeout(() => {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-      }, 300);
-    }
-
-    // App bootstrap with error handling
+    // ==================== APP BOOTSTRAP ====================
     document.addEventListener('DOMContentLoaded', async () => {
       try {
-        // Initialize icons
         if (window.feather) {
           feather.replace();
         }
 
-        // Create supabase client
         if (!SUPABASE_URL || SUPABASE_URL.includes('<YOUR_PROJECT>') || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes('<YOUR_ANON_KEY>')) {
           console.warn('Supabase URL / anon key not configured. Please edit the top of this file and add your values.');
         }
         
-        supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-        if (!supabaseClient) {
+        state.supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+        if (!state.supabaseClient) {
           console.warn('Supabase client not available (check CDN).');
         }
 
-        // Calculate and display baby age
-        const babyAge = calculateAge('2025-08-23');
-        safeText('baby-age', babyAge);
+        const babyAge = utils.calculateAge(BABY_BIRTH_DATE);
+        utils.safeText('baby-age', babyAge);
 
-        // Initialize everything
-        initCharts();
+        chartManager.init();
         setupUi();
         
-        if (supabaseClient) {
+        if (state.supabaseClient) {
           await fetchInitialData();
         } else {
-          // Show demo data if Supabase isn't available
-          updateTodayStatsAndWeightChart();
-          updateLastFeedCounter();
+          todayStatsUpdater.update();
+          counterUpdates.updateLastFeed();
+          counterUpdates.updateLastPump();
+          counterUpdates.updateLastPoop();
         }
         
-        // Update the counter every minute
-        if (counterIntervalId) clearInterval(counterIntervalId);
-        counterIntervalId = setInterval(updateLastFeedCounter, 60000); // 60000ms = 1 minute
+        if (state.counterIntervalId) clearInterval(state.counterIntervalId);
+        state.counterIntervalId = setInterval(() => {
+          counterUpdates.updateLastFeed();
+          counterUpdates.updateLastPump();
+          counterUpdates.updateLastPoop();
+        }, 60000);
         
       } catch (error) {
         console.error('Initialization error:', error);
         alert('Failed to initialize the app. Please check the console for details.');
       }
     });
-
-    // Service worker registration for offline support (optional enhancement)
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(() => {
-          // Service worker registration failed, continue without it
-        });
-      });
-    }
   </script>
 </body>
 </html>
