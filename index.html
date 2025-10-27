@@ -766,28 +766,62 @@
     // ==================== COUNTER UPDATES ====================
     const counterUpdates = {
       updateLastFeed: () => {
-        const lastFeedEl = document.getElementById('last-feed-time');
-        if (!lastFeedEl) return;
-        
-        if (state.records.feeds.length === 0) {
-          lastFeedEl.textContent = 'No records yet';
-          return;
-        }
-      
-        // Sort by actual event date+time (not created_at)
-        const sortedRecords = [...state.records.feeds].sort((a, b) => {
-          const dateA = a.date || a.created_at.split('T')[0];
-          const dateB = b.date || b.created_at.split('T')[0];
-          const timestampA = new Date(`${dateA}T${a.time}`);
-          const timestampB = new Date(`${dateB}T${b.time}`);
-          return timestampB - timestampA;
-        });
-      
-        const lastRecord = sortedRecords[0];
-        const lastDate = lastRecord.date || lastRecord.created_at.split('T')[0];
-        const lastEventTime = new Date(`${lastDate}T${lastRecord.time}`);
-        lastFeedEl.textContent = utils.formatTimeAgo(lastEventTime);
-      },
+        const lastFeedEl = document.getElementById('last-feed-time');
+        if (!lastFeedEl) return;
+        
+        if (state.records.feeds.length === 0) {
+          lastFeedEl.textContent = 'No records yet';
+          return;
+        }
+      
+        // Helper function to derive the most reliable event timestamp.
+        const getReliableTimestamp = (record) => {
+          
+          // 1. Convert created_at (UTC) to a local Date object.
+          // Note: JavaScript Date objects are internally timezone-aware.
+          const utcDate = new Date(record.created_at);
+
+          // 2. Extract the LOCAL date part (YYYY-MM-DD) from the UTC Date object.
+          // This ensures we get the correct day according to the user's browser timezone (Asia/Kuala Lumpur).
+          const localDatePart = utcDate.toLocaleDateString('en-CA', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+          }).replace(/\//g, '-'); // Formats as YYYY-MM-DD (e.g., 2025-10-27)
+
+          let eventTime = null;
+          
+          // 3. Try to use the user-entered time, combining it with the *local* date of creation.
+          if (record.time) {
+            // Combine the local date part with the user-entered time.
+            eventTime = new Date(`${localDatePart}T${record.time}`);
+          }
+          
+          // 4. If time is missing OR the combined date is invalid, fall back to the original UTC date object.
+          if (!record.time || isNaN(eventTime.getTime())) {
+            // Fallback: Use the original created_at timestamp (utcDate is a valid Date object)
+            eventTime = utcDate;
+          }
+          
+          return eventTime;
+        };
+
+        // Sort records based on the reliable timestamp, descending (newest first).
+        const sortedRecords = [...state.records.feeds].sort((a, b) => {
+          const timestampA = getReliableTimestamp(a);
+          const timestampB = getReliableTimestamp(b);
+          
+          return timestampB.getTime() - timestampA.getTime();
+        });
+      
+        // The first record in the sorted list is the latest.
+        const lastRecord = sortedRecords[0];
+        
+        // Use the reliable timestamp of the latest record for the counter.
+        const lastEventTime = getReliableTimestamp(lastRecord);
+
+        lastFeedEl.textContent = utils.formatTimeAgo(lastEventTime);
+      },
     
       updateLastPump: () => {
         const lastPumpEl = document.getElementById('last-pump-time');
@@ -1312,6 +1346,9 @@
           await recordManager.delete('feed_records', id);
           state.records.feeds = state.records.feeds.filter(r => r.id !== id);
           
+          // Clear cache BEFORE rendering
+          statsCache.clearAll();
+
           uiRenderers.renderFeedList();
           chartManager.updateFeedingChart();
           todayStatsUpdater.update();
@@ -1345,12 +1382,15 @@
             data = await recordManager.update('feed_records', recordId, newRec);
             const index = state.records.feeds.findIndex(r => r.id === recordId);
             if (index !== -1) {
-              state.records.feeds[index] = { ...state.records.feeds[index], ...newRec };
+              state.records.feeds[index] = data[0];
             }
           } else {
             data = await recordManager.create('feed_records', newRec);
             state.records.feeds.push(...data);
           }
+
+          // Clear cache BEFORE rendering
+          statsCache.clearAll();
           
           uiRenderers.renderFeedList();
           chartManager.updateFeedingChart();
