@@ -164,7 +164,7 @@
       outline-offset: 2px;
     }
     
-    #date-selector {
+    #date-selector, #pump-date-selector, #poop-date-selector {
         padding-left: 0.75rem;
         padding-right: 0.75rem;
         padding-top: 0.25rem;
@@ -176,7 +176,9 @@
         cursor: pointer;
     }
 
-    #date-selector::-webkit-calendar-picker-indicator {
+    #date-selector::-webkit-calendar-picker-indicator,
+    #pump-date-selector::-webkit-calendar-picker-indicator,
+    #poop-date-selector::-webkit-calendar-picker-indicator {
         filter: invert(0.5);
     }
 
@@ -321,6 +323,7 @@
             📜
           </button>
         </div>
+        <input type="date" id="pump-date-selector" class="px-3 py-1 bg-gray-100 rounded-lg">
       </div>
       <div class="bg-white rounded-2xl p-4 mb-4">
         <div id="pump-daily-view" class="h-64 overflow-y-auto mb-4 hidden">
@@ -344,6 +347,7 @@
             📜
           </button>
         </div>
+        <input type="date" id="poop-date-selector" class="px-3 py-1 bg-gray-100 rounded-lg">
       </div>
       <div class="bg-white rounded-2xl p-4 mb-4">
         <div id="poop-daily-view" class="h-64 overflow-y-auto mb-4">
@@ -596,11 +600,30 @@
         poopStats: new Map()
       },
       currentDate: new Date(),
+      pumpDate: new Date(),
+      poopDate: new Date(),
       counterIntervalId: null
     };
 
     // ==================== UTILITY FUNCTIONS ====================
     const utils = {
+      // Get current date/time in Malaysia timezone (GMT+8)
+      getMalaysiaDate: () => {
+        const now = new Date();
+        // Convert to Malaysia time (UTC+8)
+        const malaysiaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }));
+        return malaysiaTime;
+      },
+
+      // Convert date to Malaysia timezone and format as YYYY-MM-DD
+      toMalaysiaDateString: (date) => {
+        const d = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }));
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      },
+      
       safeText: (id, value) => {
         const el = document.getElementById(id);
         if (el) el.textContent = value;
@@ -653,7 +676,8 @@
       },
 
       toLocalDate: (date) => {
-        const d = new Date(date);
+        // Convert to Malaysia timezone first
+        const d = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }));
         return new Date(d.getFullYear(), d.getMonth(), d.getDate());
       },
 
@@ -1002,7 +1026,7 @@
       },
 
       renderPumpList: () => {
-        const dailyStats = statsCache.getPumpStats(state.currentDate);
+        const dailyStats = statsCache.getPumpStats(state.pumpDate);
         const dailyRecords = dailyStats.records.sort((a, b) => {
           const timeA = new Date(`${a.created_at.split('T')[0]}T${a.time}:00`);
           const timeB = new Date(`${b.created_at.split('T')[0]}T${b.time}:00`);
@@ -1062,7 +1086,7 @@
       },
 
       renderPoopList: () => {
-        const dailyStats = statsCache.getPoopStats(state.currentDate);
+        const dailyStats = statsCache.getPoopStats(state.poopDate);
         const dailyRecords = dailyStats.records.sort((a, b) => {
           const timeA = new Date(`${a.created_at.split('T')[0]}T${a.time}:00`);
           const timeB = new Date(`${b.created_at.split('T')[0]}T${b.time}:00`);
@@ -1238,7 +1262,7 @@
       },
 
       updatePumpingChart: () => {
-        const days = utils.lastNDates(7, state.currentDate);
+        const days = utils.lastNDates(7, state.pumpDate);
         const labels = days.map(d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
         const dailyTotals = days.map(day => {
           const stats = statsCache.getPumpStats(day);
@@ -1693,13 +1717,36 @@
 
     // ==================== UI SETUP ====================
     function setupUi() {
+      // Initialize all date selectors with Malaysia timezone
+      const malaysiaToday = utils.getMalaysiaDate();
+      const todayString = utils.toMalaysiaDateString(malaysiaToday);
+        
       const dateSelector = document.getElementById('date-selector');
       if (dateSelector) {
-        dateSelector.valueAsDate = state.currentDate;
+        dateSelector.value = todayString;
         dateSelector.addEventListener('change', (e) => {
-          state.currentDate = new Date(e.target.value);
+          state.currentDate = new Date(e.target.value + 'T00:00:00');
           uiRenderers.renderFeedList();
           chartManager.updateFeedingChart();
+        });
+      }
+    
+      const pumpDateSelector = document.getElementById('pump-date-selector');
+      if (pumpDateSelector) {
+        pumpDateSelector.value = todayString;
+        pumpDateSelector.addEventListener('change', (e) => {
+          state.pumpDate = new Date(e.target.value + 'T00:00:00');
+          uiRenderers.renderPumpList();
+          chartManager.updatePumpingChart();
+        });
+      }
+    
+      const poopDateSelector = document.getElementById('poop-date-selector');
+      if (poopDateSelector) {
+        poopDateSelector.value = todayString;
+        poopDateSelector.addEventListener('change', (e) => {
+          state.poopDate = new Date(e.target.value + 'T00:00:00');
+          uiRenderers.renderPoopList();
         });
       }
       
@@ -1770,9 +1817,9 @@
         document.querySelectorAll('.quick-feed-btn').forEach(b => b.classList.remove('active'));
         
         const timeInput = modal.querySelector('input[name="time"]');
-        const now = new Date();
+        const malaysiaDate = utils.getMalaysiaDate();
         if (timeInput) {
-          timeInput.value = now.toTimeString().slice(0, 5);
+          timeInput.value = malaysiaDate.toTimeString().slice(0, 5);
         }
         
         utils.openModal('feeding-modal');
@@ -1784,7 +1831,7 @@
         
         const dateInput = modal.querySelector('input[name="date"]');
         if (dateInput) {
-          dateInput.value = new Date().toISOString().slice(0, 10);
+          dateInput.value = utils.toMalaysiaDateString(utils.getMalaysiaDate());
         }
         
         utils.openModal('weight-modal');
@@ -1794,11 +1841,11 @@
         const modal = document.getElementById('pump-modal');
         if (!modal) return;
         
-        const now = new Date();
+        const malaysiaDate = utils.getMalaysiaDate();
         const dateInput = modal.querySelector('input[name="date"]');
         const timeInput = modal.querySelector('input[name="time"]');
-        if (dateInput) dateInput.value = now.toISOString().slice(0, 10);
-        if (timeInput) timeInput.value = now.toTimeString().slice(0, 5);
+        if (dateInput) dateInput.value = utils.toMalaysiaDateString(malaysiaDate);
+        if (timeInput) timeInput.value = malaysiaDate.toTimeString().slice(0, 5);
       
         utils.openModal('pump-modal');
       });
@@ -1807,11 +1854,11 @@
         const modal = document.getElementById('poop-modal');
         if (!modal) return;
         
-        const now = new Date();
+        const malaysiaDate = utils.getMalaysiaDate();
         const dateInput = modal.querySelector('input[name="date"]');
         const timeInput = modal.querySelector('input[name="time"]');
-        if (dateInput) dateInput.value = now.toISOString().slice(0, 10);
-        if (timeInput) timeInput.value = now.toTimeString().slice(0, 5);
+        if (dateInput) dateInput.value = utils.toMalaysiaDateString(malaysiaDate);
+        if (timeInput) timeInput.value = malaysiaDate.toTimeString().slice(0, 5);
       
         utils.openModal('poop-modal');
       });
